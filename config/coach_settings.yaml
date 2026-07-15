@@ -1,0 +1,23 @@
+timezone: America/Los_Angeles
+
+review_interval_days: 30
+
+analytics_locked: true
+
+daily_checkin_time: "20:30"
+
+default_cardio_goal_minutes: 20
+
+protein_goal_g: 150
+
+preferred_model: gpt-5.5
+
+response_style: concise
+
+workout_proof_required: true
+
+nutrition_checkin_required: true
+
+progress_photo_interval_days: 30
+
+measurement_interval_days: 30

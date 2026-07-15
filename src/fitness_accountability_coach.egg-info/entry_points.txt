@@ -1,0 +1,3 @@
+[console_scripts]
+fitness-coach-api = fitness_coach.api.app:run
+fitness-coach-bot = fitness_coach.bot.discord_bot:run

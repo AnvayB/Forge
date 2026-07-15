@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fitness-accountability-coach"
+version = "0.1.0"
+description = "Discord-first AI fitness accountability coach with deterministic analytics."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "apscheduler>=3.10",
+    "discord.py>=2.4",
+    "fastapi>=0.115",
+    "openai>=1.60",
+    "pillow>=10.4",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0",
+    "uvicorn>=0.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis>=6.115",
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.7",
+]
+
+[project.scripts]
+fitness-coach-api = "fitness_coach.api.app:run"
+fitness-coach-bot = "fitness_coach.bot.discord_bot:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=fitness_coach --cov-report=term-missing"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
