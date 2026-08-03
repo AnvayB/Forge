@@ -9,3 +9,5 @@ data/*.db
 data/*.db-*
 uploads/tmp/
 uploads/progress/
+build/
+.DS_Store

@@ -6,6 +6,35 @@ Become healthier, stronger, leaner, and more consistent over the long term. Incr
 
 ---
 
+## Current Phase & Timeline
+
+Currently in a bulking phase.
+
+Checkpoint: **December** — evaluate progress at this point and decide whether to continue bulking, transition to a cut, or adjust the training/nutrition approach.
+
+Recommendations should account for the bulk (e.g. calorie surplus expectations) while still working toward the long-term goal above.
+
+---
+
+## Session Time Constraints
+
+- Lifting only: ~60–90 minutes.
+- Lifting + cardio combined: ~90–120 minutes.
+
+Recommendations should fit within these windows. See `training_preferences.md` for the full split and cardio schedule.
+
+---
+
+## Recovery & Lifestyle Factors
+
+When making recommendations, account for:
+
+- Sleep amount and quality
+- Hydration / water intake
+- Other recovery and lifestyle factors (stress, travel, etc.)
+
+---
+
 ## Current Philosophy
 
 The user prefers:
@@ -44,7 +73,9 @@ Wants to get into:
 - running outdoors
 - biking outdoors
 
-Consistency is more important than duration.
+Consistency is more important than duration or intensity.
+
+Current schedule: 3 days/week (Monday, Wednesday, Friday). See `training_preferences.md` for session details and intensity targets.
 
 ---
 

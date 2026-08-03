@@ -6,7 +6,13 @@ analytics_locked: true
 
 daily_checkin_time: "20:30"
 
-default_cardio_goal_minutes: 20
+morning_workout_reminder_time: "09:00"
+
+cardio_days: [Monday, Wednesday, Friday]
+
+default_cardio_goal_minutes: 35
+
+target_checkpoint_date: "2026-12-01"
 
 protein_goal_g: 150
 

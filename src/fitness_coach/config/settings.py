@@ -18,7 +18,10 @@ class CoachSettings(BaseSettings):
     review_interval_days: int = 30
     analytics_locked: bool = True
     daily_checkin_time: str = "20:30"
-    default_cardio_goal_minutes: int = 20
+    morning_workout_reminder_time: str = "09:00"
+    cardio_days: list[str] = Field(default_factory=lambda: ["Monday", "Wednesday", "Friday"])
+    default_cardio_goal_minutes: int = 35
+    target_checkpoint_date: str = "2026-12-01"
     protein_goal_g: int = 150
     preferred_model: str = "gpt-5.5"
     response_style: str = "concise"
