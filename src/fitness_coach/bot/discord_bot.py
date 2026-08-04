@@ -42,6 +42,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             scheduler.start()
             scheduler_state["scheduler"] = scheduler
             logger.info("scheduler_started")
+            await _send_startup_confirmation(factory, bot)
 
     @bot.command(name="checkin")
     async def checkin(ctx: commands.Context[commands.Bot]) -> None:
@@ -177,6 +178,25 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         await message.reply(response_text)
 
     return bot
+
+
+async def _send_startup_confirmation(factory: ServiceFactory, bot: commands.Bot) -> None:
+    """DM the user once per process start to confirm the bot is back online."""
+
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user()
+        discord_user_id = user.discord_user_id
+
+    if not discord_user_id:
+        logger.warning("startup_confirmation_skipped_no_discord_user")
+        return
+
+    try:
+        discord_user = await bot.fetch_user(int(discord_user_id))
+        await discord_user.send("Fitness coach bot is back online after a redeploy.")
+    except discord.DiscordException:
+        logger.exception("startup_confirmation_failed")
 
 
 def run() -> None:
