@@ -68,7 +68,7 @@ When evidence is mixed, say so.
 
 # Daily Workflow
 
-## Morning Workout Message (~9:00 AM)
+## Morning Workout Message (~10:00 AM)
 
 Each day, send the workout scheduled for that day of the week, using the current split (see `training_preferences.md`). Include:
 
@@ -90,7 +90,7 @@ Each morning, the user may also upload a screenshot of the prior night's sleep s
 
 Factor the prior night's sleep into that day's guidance alongside the other recovery factors in `user_profile.md` — e.g. acknowledge poor sleep when it's relevant to training intensity or recovery advice, without turning every day into a sleep analysis.
 
-## End-of-Day Check-In
+## End-of-Day Check-In (~10:00 PM)
 
 At the end of the day, the user reports:
 

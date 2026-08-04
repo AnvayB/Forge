@@ -17,8 +17,8 @@ class CoachSettings(BaseSettings):
     timezone: str = "America/Los_Angeles"
     review_interval_days: int = 30
     analytics_locked: bool = True
-    daily_checkin_time: str = "20:30"
-    morning_workout_reminder_time: str = "09:00"
+    daily_checkin_time: str = "22:00"
+    morning_workout_reminder_time: str = "10:00"
     cardio_days: list[str] = Field(default_factory=lambda: ["Monday", "Wednesday", "Friday"])
     default_cardio_goal_minutes: int = 35
     target_checkpoint_date: str = "2026-12-01"

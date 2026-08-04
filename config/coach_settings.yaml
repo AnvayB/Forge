@@ -4,9 +4,9 @@ review_interval_days: 30
 
 analytics_locked: true
 
-daily_checkin_time: "20:30"
+daily_checkin_time: "22:00"
 
-morning_workout_reminder_time: "09:00"
+morning_workout_reminder_time: "10:00"
 
 cardio_days: [Monday, Wednesday, Friday]
 

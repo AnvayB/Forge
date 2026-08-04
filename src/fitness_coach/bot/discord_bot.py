@@ -20,6 +20,7 @@ from fitness_coach.database.schemas import (
     WorkoutLog,
 )
 from fitness_coach.logging import configure_logging
+from fitness_coach.scheduler.jobs import build_scheduler
 from fitness_coach.vision.processor import ImageKind
 
 logger = logging.getLogger(__name__)
@@ -31,10 +32,16 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
     intents = discord.Intents.default()
     intents.message_content = True
     bot = commands.Bot(command_prefix="!", intents=intents)
+    scheduler_state: dict[str, object] = {}
 
     @bot.event
     async def on_ready() -> None:
         logger.info("discord_bot_ready user=%s", bot.user)
+        if "scheduler" not in scheduler_state:
+            scheduler = build_scheduler(factory, bot)
+            scheduler.start()
+            scheduler_state["scheduler"] = scheduler
+            logger.info("scheduler_started")
 
     @bot.command(name="checkin")
     async def checkin(ctx: commands.Context[commands.Bot]) -> None:
