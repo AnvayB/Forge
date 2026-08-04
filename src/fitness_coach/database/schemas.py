@@ -49,6 +49,30 @@ class NutritionLog(BaseModel):
     notes: str = ""
 
 
+class SleepLog(BaseModel):
+    """Input schema for a nightly sleep summary.
+
+    `logged_for` should be the date of the morning the summary covers (the
+    wake-up day), since sleep screenshots are provided each morning for the
+    prior night.
+    """
+
+    logged_for: datetime
+    bedtime: datetime | None = None
+    wake_time: datetime | None = None
+    time_asleep_minutes: int | None = Field(default=None, ge=0)
+    time_awake_minutes: int | None = Field(default=None, ge=0)
+    light_minutes: int | None = Field(default=None, ge=0)
+    deep_minutes: int | None = Field(default=None, ge=0)
+    rem_minutes: int | None = Field(default=None, ge=0)
+    regularity_percent: float | None = Field(default=None, ge=0, le=100)
+    sleep_latency_minutes: int | None = Field(default=None, ge=0)
+    wake_up_mood: str | None = None
+    proof_source: str | None = None
+    proof_confidence: float | None = Field(default=None, ge=0, le=1)
+    notes: str = ""
+
+
 class MeasurementLog(BaseModel):
     """Input schema for body measurements."""
 

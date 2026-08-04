@@ -12,7 +12,13 @@ from discord.ext import commands
 from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.settings import get_app_settings, get_coach_settings
-from fitness_coach.database.schemas import CardioLog, CommitmentCreate, NutritionLog, WorkoutLog
+from fitness_coach.database.schemas import (
+    CardioLog,
+    CommitmentCreate,
+    NutritionLog,
+    SleepLog,
+    WorkoutLog,
+)
 from fitness_coach.logging import configure_logging
 from fitness_coach.vision.processor import ImageKind
 
@@ -89,6 +95,23 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                     carbs_g=carbs_g,
                     fat_g=fat_g,
                     notes="Logged from Discord text command.",
+                ),
+            )
+        await ctx.reply(response.message)
+
+    @bot.command(name="sleep")
+    async def sleep(
+        ctx: commands.Context[commands.Bot], time_asleep_minutes: int, *, notes: str = ""
+    ) -> None:
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            response = coach.log_sleep(
+                user.id,
+                SleepLog(
+                    logged_for=datetime.now(UTC),
+                    time_asleep_minutes=time_asleep_minutes,
+                    notes=notes or "Logged from Discord text command.",
                 ),
             )
         await ctx.reply(response.message)
@@ -170,6 +193,8 @@ def _is_image_attachment(attachment: discord.Attachment) -> bool:
 
 def _infer_image_kind(message_content: str, filename: str) -> str:
     text = f"{message_content} {filename}".lower()
+    if "sleep" in text:
+        return ImageKind.SLEEP_SCREENSHOT
     if "progress" in text or "photo" in text:
         return ImageKind.PROGRESS_PHOTO
     if "nutrition" in text or "myfitnesspal" in text or "macro" in text:

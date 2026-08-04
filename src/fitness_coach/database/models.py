@@ -77,6 +77,7 @@ class User(Base):
     workouts: Mapped[list[WorkoutEvent]] = relationship(back_populates="user")
     cardio_sessions: Mapped[list[CardioEvent]] = relationship(back_populates="user")
     nutrition_logs: Mapped[list[NutritionEvent]] = relationship(back_populates="user")
+    sleep_logs: Mapped[list[SleepEvent]] = relationship(back_populates="user")
     measurements: Mapped[list[MeasurementEvent]] = relationship(back_populates="user")
     commitments: Mapped[list[CommitmentEvent]] = relationship(back_populates="user")
 
@@ -159,6 +160,33 @@ class NutritionEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     user: Mapped[User] = relationship(back_populates="nutrition_logs")
+
+
+class SleepEvent(Base):
+    """Nightly sleep summary extracted from a sleep-tracking app screenshot."""
+
+    __tablename__ = "sleep_events"
+    __table_args__ = (UniqueConstraint("user_id", "logged_for", name="uq_sleep_user_night"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    logged_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    bedtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    wake_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    time_asleep_minutes: Mapped[int | None] = mapped_column(Integer)
+    time_awake_minutes: Mapped[int | None] = mapped_column(Integer)
+    light_minutes: Mapped[int | None] = mapped_column(Integer)
+    deep_minutes: Mapped[int | None] = mapped_column(Integer)
+    rem_minutes: Mapped[int | None] = mapped_column(Integer)
+    regularity_percent: Mapped[float | None] = mapped_column(Float)
+    sleep_latency_minutes: Mapped[int | None] = mapped_column(Integer)
+    wake_up_mood: Mapped[str | None] = mapped_column(String(40))
+    proof_source: Mapped[str | None] = mapped_column(String(80))
+    proof_confidence: Mapped[float | None] = mapped_column(Float)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    user: Mapped[User] = relationship(back_populates="sleep_logs")
 
 
 class MeasurementEvent(Base):

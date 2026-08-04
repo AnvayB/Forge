@@ -29,7 +29,7 @@ Recommendations should fit within these windows. See `training_preferences.md` f
 
 When making recommendations, account for:
 
-- Sleep amount and quality
+- Sleep amount and quality — tracked via a nightly sleep-summary screenshot uploaded each morning (see `system_prompt.md`)
 - Hydration / water intake
 - Other recovery and lifestyle factors (stress, travel, etc.)
 

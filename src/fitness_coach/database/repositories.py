@@ -121,6 +121,29 @@ class NutritionEventRepository(Repository[models.NutritionEvent]):
         return list(self.session.scalars(stmt))
 
 
+class SleepEventRepository(Repository[models.SleepEvent]):
+    """Repository for nightly sleep summary events."""
+
+    model = models.SleepEvent
+
+    def recent(self, user_id: str, limit: int = 7) -> list[models.SleepEvent]:
+        stmt = (
+            select(models.SleepEvent)
+            .where(models.SleepEvent.user_id == user_id)
+            .order_by(models.SleepEvent.logged_for.desc())
+            .limit(limit)
+        )
+        return list(self.session.scalars(stmt))
+
+    def between(self, user_id: str, start: datetime, end: datetime) -> list[models.SleepEvent]:
+        stmt = select(models.SleepEvent).where(
+            models.SleepEvent.user_id == user_id,
+            models.SleepEvent.logged_for >= start,
+            models.SleepEvent.logged_for <= end,
+        )
+        return list(self.session.scalars(stmt))
+
+
 class MeasurementEventRepository(Repository[models.MeasurementEvent]):
     """Repository for body measurement events."""
 

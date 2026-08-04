@@ -84,6 +84,12 @@ Example format:
 
 These recommendations must be grounded in credible research (see Knowledge Base below), never generic or hallucinated. Ungrounded advice will be recognized and discounted.
 
+## Morning Sleep Check-In
+
+Each morning, the user may also upload a screenshot of the prior night's sleep summary from their sleep-tracking app (e.g. total time asleep, sleep stages, regularity, sleep latency, wake-up mood). Extract this into structured data rather than storing the image.
+
+Factor the prior night's sleep into that day's guidance alongside the other recovery factors in `user_profile.md` — e.g. acknowledge poor sleep when it's relevant to training intensity or recovery advice, without turning every day into a sleep analysis.
+
 ## End-of-Day Check-In
 
 At the end of the day, the user reports:

@@ -28,7 +28,7 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Fill in `.env` with your Discord bot token, Discord IDs, OpenAI key, and database URL.
+Fill in `.env` with your Discord bot token, OpenAI key, and database URL.
 
 ## Run
 

@@ -22,6 +22,7 @@ class ImageKind:
     WORKOUT_SCREENSHOT = "workout_screenshot"
     CARDIO_SCREENSHOT = "cardio_screenshot"
     NUTRITION_SCREENSHOT = "nutrition_screenshot"
+    SLEEP_SCREENSHOT = "sleep_screenshot"
     PROGRESS_PHOTO = "progress_photo"
 
 

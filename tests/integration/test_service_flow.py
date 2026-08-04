@@ -10,9 +10,9 @@ from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
-from fitness_coach.database.repositories import WorkoutEventRepository
-from fitness_coach.database.schemas import NutritionLog, WorkoutLog
-from fitness_coach.vision.processor import ImageKind
+from fitness_coach.database.repositories import SleepEventRepository, WorkoutEventRepository
+from fitness_coach.database.schemas import NutritionLog, SleepLog, WorkoutLog
+from fitness_coach.vision.processor import ImageKind, VisionExtraction
 
 
 @pytest.fixture
@@ -55,6 +55,69 @@ def test_service_logs_structured_events(factory: ServiceFactory) -> None:
     assert nutrition_response.metadata["event_type"] == "nutrition_logged"
     assert len(workouts) == 1
     assert workouts[0].workout_type == "Upper"
+
+
+def test_service_logs_sleep(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.log_sleep(
+            user.id,
+            SleepLog(
+                logged_for=datetime(2026, 7, 1, tzinfo=UTC),
+                time_asleep_minutes=341,
+                regularity_percent=90,
+                wake_up_mood="OK",
+            ),
+        )
+        logs = SleepEventRepository(session).recent(user.id)
+
+    assert response.metadata["event_type"] == "sleep_logged"
+    assert len(logs) == 1
+    assert logs[0].time_asleep_minutes == 341
+    assert logs[0].wake_up_mood == "OK"
+
+
+def test_sleep_screenshot_extraction_stores_structured_summary(factory: ServiceFactory) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.SLEEP_SCREENSHOT,
+        confidence=0.9,
+        needs_clarification=False,
+        facts={
+            "time_asleep_minutes": 341,
+            "regularity_percent": 90,
+            "sleep_latency_minutes": 47,
+            "wake_up_mood": "OK",
+        },
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+        logs = SleepEventRepository(session).recent(user.id)
+
+    assert response.metadata["event_type"] == "sleep_logged"
+    assert len(logs) == 1
+    assert logs[0].sleep_latency_minutes == 47
+
+
+def test_sleep_screenshot_extraction_without_core_field_asks_for_clarification(
+    factory: ServiceFactory,
+) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.SLEEP_SCREENSHOT,
+        confidence=0.9,
+        needs_clarification=False,
+        facts={"wake_up_mood": "OK"},
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+
+    assert response.metadata["event_type"] == "vision_clarification_required"
 
 
 def test_prompt_builder_includes_dynamic_context(factory: ServiceFactory) -> None:

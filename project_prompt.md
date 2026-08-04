@@ -69,6 +69,7 @@ The bot has four major responsibilities:
     - cardio completion
     - commitments
     - nutrition summaries
+    - nightly sleep summaries
 
     Do NOT replace dedicated tracking apps.
 
@@ -91,6 +92,25 @@ The user manually copies these values from MyFitnessPal.
 The bot stores only these totals.
 
 No meal logging.
+
+========================
+SLEEP
+========================
+
+Each morning the user may upload a screenshot of the prior night's sleep summary
+from their sleep-tracking app.
+
+The bot stores only extracted structured data:
+
+- time asleep
+- sleep stages (light, deep, REM)
+- regularity
+- sleep latency ("asleep after")
+- wake-up mood
+
+No sleep screenshots are retained after processing.
+
+Sleep data feeds into recovery-aware coaching, alongside nutrition and training load.
 
 ========================
 WORKOUT PROOF

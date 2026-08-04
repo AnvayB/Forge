@@ -40,8 +40,6 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     discord_token: str | None = None
-    discord_guild_id: int | None = None
-    discord_channel_id: int | None = None
     openai_api_key: str | None = None
     database_url: str = "sqlite:///data/fitness_coach.db"
     config_dir: Path = Field(default=Path("config"))

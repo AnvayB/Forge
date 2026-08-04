@@ -17,6 +17,7 @@ from fitness_coach.database.repositories import (
     MeasurementEventRepository,
     NutritionEventRepository,
     ProgressReviewRepository,
+    SleepEventRepository,
     UserRepository,
     WorkoutEventRepository,
     WorkoutPlanRepository,
@@ -26,6 +27,7 @@ from fitness_coach.database.schemas import (
     CoachResponse,
     CommitmentCreate,
     NutritionLog,
+    SleepLog,
     WorkoutLog,
 )
 from fitness_coach.vision.processor import ImageKind, VisionExtraction
@@ -48,6 +50,7 @@ class CoachService:
         workouts: WorkoutEventRepository,
         cardio: CardioEventRepository,
         nutrition: NutritionEventRepository,
+        sleep: SleepEventRepository,
         measurements: MeasurementEventRepository,
         commitments: CommitmentEventRepository,
         workout_plans: WorkoutPlanRepository,
@@ -61,6 +64,7 @@ class CoachService:
         self.workouts = workouts
         self.cardio = cardio
         self.nutrition = nutrition
+        self.sleep = sleep
         self.measurements = measurements
         self.commitments = commitments
         self.workout_plans = workout_plans
@@ -117,6 +121,15 @@ class CoachService:
         return CoachResponse(
             message=message,
             metadata={"event_id": event.id, "event_type": "nutrition_logged"},
+        )
+
+    def log_sleep(self, user_id: str, payload: SleepLog) -> CoachResponse:
+        """Persist a nightly sleep summary event."""
+
+        event = self.sleep.add(models.SleepEvent(user_id=user_id, **payload.model_dump()))
+        return CoachResponse(
+            message="Sleep logged.",
+            metadata={"event_id": event.id, "event_type": "sleep_logged"},
         )
 
     def create_commitment(self, user_id: str, payload: CommitmentCreate) -> CoachResponse:
@@ -246,6 +259,36 @@ class CoachService:
                 metadata={"event_id": event.id, "event_type": "nutrition_logged"},
             )
 
+        if extraction.kind == ImageKind.SLEEP_SCREENSHOT:
+            if "time_asleep_minutes" not in facts:
+                return CoachResponse(
+                    message="I need at least total time asleep before logging that as sleep data.",
+                    metadata={"event_type": "vision_clarification_required", "facts": facts},
+                )
+            event = self.sleep.add(
+                models.SleepEvent(
+                    user_id=user_id,
+                    logged_for=now,
+                    bedtime=_optional_datetime(facts.get("bedtime")),
+                    wake_time=_optional_datetime(facts.get("wake_time")),
+                    time_asleep_minutes=_optional_int(facts.get("time_asleep_minutes")),
+                    time_awake_minutes=_optional_int(facts.get("time_awake_minutes")),
+                    light_minutes=_optional_int(facts.get("light_minutes")),
+                    deep_minutes=_optional_int(facts.get("deep_minutes")),
+                    rem_minutes=_optional_int(facts.get("rem_minutes")),
+                    regularity_percent=_optional_float(facts.get("regularity_percent")),
+                    sleep_latency_minutes=_optional_int(facts.get("sleep_latency_minutes")),
+                    wake_up_mood=facts.get("wake_up_mood"),
+                    proof_source=extraction.kind,
+                    proof_confidence=extraction.confidence,
+                    notes=notes,
+                )
+            )
+            return CoachResponse(
+                message="Sleep screenshot processed and stored as a structured nightly summary.",
+                metadata={"event_id": event.id, "event_type": "sleep_logged"},
+            )
+
         event = self.measurements.add(
             models.MeasurementEvent(
                 user_id=user_id,
@@ -340,4 +383,13 @@ def _optional_float(value: Any) -> float | None:
     try:
         return float(value)
     except (TypeError, ValueError):
+        return None
+
+
+def _optional_datetime(value: Any) -> datetime | None:
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
         return None
