@@ -85,10 +85,10 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
     @bot.command(name="nutrition")
     async def nutrition(
         ctx: commands.Context[commands.Bot],
-        calories_remaining: float,
-        protein_remaining_g: float,
         carbs_remaining_g: float,
         fat_remaining_g: float,
+        protein_remaining_g: float,
+        calories_remaining: float,
     ) -> None:
         """Log nutrition from the "remaining" amounts shown in MyFitnessPal."""
 
