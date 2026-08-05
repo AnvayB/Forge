@@ -22,7 +22,10 @@ class CoachSettings(BaseSettings):
     cardio_days: list[str] = Field(default_factory=lambda: ["Monday", "Wednesday", "Friday"])
     default_cardio_goal_minutes: int = 35
     target_checkpoint_date: str = "2026-12-01"
-    protein_goal_g: int = 150
+    calorie_goal: int = 2335
+    protein_goal_g: int = 160
+    carbs_goal_g: int = 300
+    fat_goal_g: int = 55
     preferred_model: str = "gpt-5.5"
     response_style: str = "concise"
     workout_proof_required: bool = True

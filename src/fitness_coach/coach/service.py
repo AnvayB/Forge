@@ -123,6 +123,40 @@ class CoachService:
             metadata={"event_id": event.id, "event_type": "nutrition_logged"},
         )
 
+    def log_nutrition_remaining(
+        self,
+        user_id: str,
+        *,
+        logged_for: datetime,
+        calories_remaining: float,
+        protein_remaining_g: float,
+        carbs_remaining_g: float,
+        fat_remaining_g: float,
+        proof_source: str | None = None,
+        proof_confidence: float | None = None,
+        notes: str = "",
+    ) -> CoachResponse:
+        """Log nutrition from MyFitnessPal-style "remaining" amounts.
+
+        Remaining amounts are relative to the configured daily goals, so consumed
+        totals are goal minus remaining (a negative remaining means the goal was
+        exceeded).
+        """
+
+        return self.log_nutrition(
+            user_id,
+            NutritionLog(
+                logged_for=logged_for,
+                calories=round(self.settings.calorie_goal - calories_remaining),
+                protein_g=self.settings.protein_goal_g - protein_remaining_g,
+                carbs_g=self.settings.carbs_goal_g - carbs_remaining_g,
+                fat_g=self.settings.fat_goal_g - fat_remaining_g,
+                proof_source=proof_source,
+                proof_confidence=proof_confidence,
+                notes=notes,
+            ),
+        )
+
     def log_sleep(self, user_id: str, payload: SleepLog) -> CoachResponse:
         """Persist a nightly sleep summary event."""
 
@@ -232,31 +266,34 @@ class CoachService:
             )
 
         if extraction.kind == ImageKind.NUTRITION_SCREENSHOT:
-            required = ("calories", "protein_g", "carbs_g", "fat_g")
+            required = (
+                "calories_remaining",
+                "protein_g_remaining",
+                "carbs_g_remaining",
+                "fat_g_remaining",
+            )
             if not all(key in facts for key in required):
                 return CoachResponse(
                     message=(
-                        "I need the calories, protein, carbs, and fat before logging "
-                        "nutrition."
+                        "I need the calories, protein, carbs, and fat remaining before "
+                        "logging nutrition."
                     ),
                     metadata={"event_type": "vision_clarification_required", "facts": facts},
                 )
-            event = self.nutrition.add(
-                models.NutritionEvent(
-                    user_id=user_id,
-                    logged_for=now,
-                    calories=int(facts["calories"]),
-                    protein_g=float(facts["protein_g"]),
-                    carbs_g=float(facts["carbs_g"]),
-                    fat_g=float(facts["fat_g"]),
-                    proof_source=extraction.kind,
-                    proof_confidence=extraction.confidence,
-                    notes=notes,
-                )
+            result = self.log_nutrition_remaining(
+                user_id,
+                logged_for=now,
+                calories_remaining=float(facts["calories_remaining"]),
+                protein_remaining_g=float(facts["protein_g_remaining"]),
+                carbs_remaining_g=float(facts["carbs_g_remaining"]),
+                fat_remaining_g=float(facts["fat_g_remaining"]),
+                proof_source=extraction.kind,
+                proof_confidence=extraction.confidence,
+                notes=notes,
             )
             return CoachResponse(
                 message="Nutrition screenshot processed and stored as structured daily totals.",
-                metadata={"event_id": event.id, "event_type": "nutrition_logged"},
+                metadata=result.metadata,
             )
 
         if extraction.kind == ImageKind.SLEEP_SCREENSHOT:

@@ -98,7 +98,7 @@ Factor the prior night's sleep into that day's guidance alongside the other reco
 
 At the end of the day, the user reports:
 
-- Nutrition: calories, protein, carbs, fat, and how much remains relative to daily targets (via MyFitnessPal screenshot or manual entry)
+- Nutrition: calories, protein, carbs, and fat **remaining** for the day, as shown on the MyFitnessPal "Nutrients Remaining" widget (via screenshot or the `!nutrition` command) — not amounts consumed. Daily targets are 2335 calories, 160g protein, 300g carbs, 55g fat.
 - Workout completed: exercises, sets, and reps performed (via text or image)
 - Cardio completed, on cardio days: type, duration, and relevant details
 

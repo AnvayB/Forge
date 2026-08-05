@@ -15,7 +15,6 @@ from fitness_coach.config.settings import get_app_settings, get_coach_settings
 from fitness_coach.database.schemas import (
     CardioLog,
     CommitmentCreate,
-    NutritionLog,
     SleepLog,
     WorkoutLog,
 )
@@ -86,24 +85,24 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
     @bot.command(name="nutrition")
     async def nutrition(
         ctx: commands.Context[commands.Bot],
-        calories: int,
-        protein_g: float,
-        carbs_g: float,
-        fat_g: float,
+        calories_remaining: float,
+        protein_remaining_g: float,
+        carbs_remaining_g: float,
+        fat_remaining_g: float,
     ) -> None:
+        """Log nutrition from the "remaining" amounts shown in MyFitnessPal."""
+
         with factory.session() as session:
             coach = factory.coach_service(session)
             user = coach.get_user(str(ctx.author.id))
-            response = coach.log_nutrition(
+            response = coach.log_nutrition_remaining(
                 user.id,
-                NutritionLog(
-                    logged_for=datetime.now(UTC),
-                    calories=calories,
-                    protein_g=protein_g,
-                    carbs_g=carbs_g,
-                    fat_g=fat_g,
-                    notes="Logged from Discord text command.",
-                ),
+                logged_for=datetime.now(UTC),
+                calories_remaining=calories_remaining,
+                protein_remaining_g=protein_remaining_g,
+                carbs_remaining_g=carbs_remaining_g,
+                fat_remaining_g=fat_remaining_g,
+                notes="Logged from Discord text command.",
             )
         await ctx.reply(response.message)
 

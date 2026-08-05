@@ -98,14 +98,24 @@ class VisionProcessor:
 
     def _analyze(self, *, user_id: str, image_path: Path, kind: str) -> dict[str, Any]:
         prompt = self.prompt_builder.build(user_id)
+        task = (
+            "Extract structured fitness facts from this image. Return JSON with keys "
+            "`confidence`, `needs_clarification`, and `facts`. The image kind is "
+            f"{kind}. If confidence is low, set needs_clarification to true."
+        )
+        if kind == ImageKind.NUTRITION_SCREENSHOT:
+            task += (
+                " This is typically a MyFitnessPal 'Nutrients Remaining' widget, which shows "
+                "how much of the daily budget is left rather than how much has been consumed. "
+                "Read the remaining amounts exactly as shown (a value can be negative if the "
+                "daily goal was already exceeded) and put them in `facts` as "
+                "`calories_remaining`, `protein_g_remaining`, `carbs_g_remaining`, and "
+                "`fat_g_remaining`."
+            )
         result = self.openai.analyze_image(
             system_prompt=prompt,
             image_path=image_path,
-            task=(
-                "Extract structured fitness facts from this image. Return JSON with keys "
-                "`confidence`, `needs_clarification`, and `facts`. The image kind is "
-                f"{kind}. If confidence is low, set needs_clarification to true."
-            ),
+            task=task,
         )
         try:
             parsed = json.loads(result.text)

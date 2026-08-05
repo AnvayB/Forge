@@ -14,7 +14,13 @@ default_cardio_goal_minutes: 35
 
 target_checkpoint_date: "2026-12-01"
 
-protein_goal_g: 150
+calorie_goal: 2335
+
+protein_goal_g: 160
+
+carbs_goal_g: 300
+
+fat_goal_g: 55
 
 preferred_model: gpt-5.5
 

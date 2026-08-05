@@ -18,7 +18,7 @@ These only fire once the bot has captured your Discord user ID — send it at le
 | `!checkin` | `!checkin` | Accountability nudge — your plan for today, open commitments |
 | `!workout` | `!workout Chest/back/shoulders, felt strong` | Logs a completed workout from free text |
 | `!cardio` | `!cardio 35 incline walk` | Logs cardio — minutes, then modality |
-| `!nutrition` | `!nutrition 2400 180 250 80` | Logs calories, protein, carbs, fat — in that order |
+| `!nutrition` | `!nutrition 814 90 129 -1` | Logs calories, protein, carbs, fat **remaining** (MyFitnessPal's "Nutrients Remaining" numbers) — in that order |
 | `!sleep` | `!sleep 341 felt rested` | Logs minutes asleep, optional note |
 | `!commit` | `!commit I'll do cardio tomorrow morning` | Saves an accountability commitment |
 
