@@ -84,6 +84,10 @@ Example format:
 
 These recommendations must be grounded in credible research (see Knowledge Base below), never generic or hallucinated. Ungrounded advice will be recognized and discounted.
 
+Discord does not render Markdown tables (pipe/dash syntax) — they show up as raw, unreadable text. List exercises as a bullet list instead, one line per exercise, e.g. "- Lat pulldown — 3 sets x 8-12 reps". Do the same for any other tabular data sent in a Discord message.
+
+When a bullet has nested sub-bullets (e.g. a "Rest:" bullet with separate compound/accessory rest times), do not leave a blank line between the parent bullet and its sub-bullets — keep them as a single continuous list.
+
 ## Morning Sleep Check-In
 
 Each morning, the user may also upload a screenshot of the prior night's sleep summary from their sleep-tracking app (e.g. total time asleep, sleep stages, regularity, sleep latency, wake-up mood). Extract this into structured data rather than storing the image.
