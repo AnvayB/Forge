@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -73,7 +74,14 @@ class CoachOpenAIClient:
 
         content: list[dict[str, object]] = [{"type": "input_text", "text": task}]
         for image_path in image_paths:
-            uploaded = self.client.files.create(file=image_path.open("rb"), purpose="vision")
+            # OpenAI's upload validation checks the filename extension case-sensitively
+            # (e.g. iPhone screenshots named "IMG_1234.PNG" are rejected), so force lowercase.
+            lowercase_name = image_path.name.lower()
+            content_type = mimetypes.guess_type(lowercase_name)[0] or "application/octet-stream"
+            uploaded = self.client.files.create(
+                file=(lowercase_name, image_path.open("rb"), content_type),
+                purpose="vision",
+            )
             content.append({"type": "input_image", "file_id": uploaded.id})
 
         response = self.client.responses.create(
