@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -454,8 +455,21 @@ def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
             for exercise_set in exercise.get("sets", [])
             if (part := _format_set(exercise_set.get("weight"), exercise_set.get("reps")))
         ]
-        lines.append(f"- {name}: {', '.join(set_strs)}" if set_strs else f"- {name}")
+        rendered = ", ".join(_collapse_repeats(set_strs))
+        lines.append(f"- {name}: {rendered}" if rendered else f"- {name}")
     return "\n".join(lines)
+
+
+def _collapse_repeats(values: list[str]) -> list[str]:
+    """Collapse consecutive identical entries (e.g. matching right/left-arm sets)."""
+
+    collapsed: list[tuple[str, int]] = []
+    for value in values:
+        if collapsed and collapsed[-1][0] == value:
+            collapsed[-1] = (value, collapsed[-1][1] + 1)
+        else:
+            collapsed.append((value, 1))
+    return [f"{value} ×{count}" if count > 1 else value for value, count in collapsed]
 
 
 def _format_set(weight: Any, reps: Any) -> str | None:
@@ -470,11 +484,19 @@ def _format_set(weight: Any, reps: Any) -> str | None:
     return None
 
 
+_LEADING_NUMBER = re.compile(r"[-+]?\d*\.?\d+")
+
+
 def _format_number(value: Any) -> str | None:
     if value is None:
         return None
     try:
         number = float(value)
     except (TypeError, ValueError):
-        return str(value)
+        # The vision model sometimes bakes units into the value (e.g. "30 lbs" instead
+        # of 30); pull the leading number out rather than displaying the raw string.
+        match = _LEADING_NUMBER.search(str(value))
+        if not match:
+            return None
+        number = float(match.group())
     return str(int(number)) if number == int(number) else str(number)

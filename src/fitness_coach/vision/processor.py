@@ -119,7 +119,8 @@ class VisionProcessor:
             "`needs_clarification`, and `facts`. Put `workout_type`, `duration_minutes`, "
             "`calories_burned` (only if mentioned), and `exercises` (a list of objects "
             "with `name` and `sets`, where `sets` is a list of objects with `weight` and "
-            "`reps`) into `facts`, using only what the user actually stated."
+            "`reps`) into `facts`, using only what the user actually stated. `weight` and "
+            "`reps` must be plain numbers with no unit text (30, not '30 lbs' or '30lbs')."
         )
         result = self.openai.analyze_text(system_prompt=prompt, task=task, text=text)
         extraction = self._parse_extraction_result(result)
@@ -180,7 +181,9 @@ class VisionProcessor:
                 "`workout_type`, `duration_minutes`, `calories_burned`, and `exercises` "
                 "(a list of objects with `name` and `sets`, where `sets` is a list of "
                 "objects with `weight` and `reps` since weight/reps can vary per set). "
-                "Only include fields you can actually read from an image."
+                "`weight` and `reps` must be plain numbers with no unit text (30, not "
+                "'30 lbs' or '30lbs'). Only include fields you can actually read from an "
+                "image."
             )
         if extra_notes:
             task += f" The user also provided this note: {extra_notes!r}."
