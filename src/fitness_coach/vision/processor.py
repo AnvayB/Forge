@@ -27,6 +27,42 @@ class ImageKind:
     PROGRESS_PHOTO = "progress_photo"
 
 
+_VALID_IMAGE_KINDS = {
+    ImageKind.WORKOUT_SCREENSHOT,
+    ImageKind.CARDIO_SCREENSHOT,
+    ImageKind.NUTRITION_SCREENSHOT,
+    ImageKind.SLEEP_SCREENSHOT,
+    ImageKind.PROGRESS_PHOTO,
+}
+
+_AUTO_DETECT_TASK = (
+    "Identify what kind of fitness/nutrition screenshot this is, then extract structured "
+    "facts from it. Return JSON with keys `kind`, `confidence`, `needs_clarification`, and "
+    "`facts`. `kind` must be exactly one of: `workout_screenshot`, `cardio_screenshot`, "
+    "`nutrition_screenshot`, `sleep_screenshot`, `progress_photo`. Field conventions per "
+    "kind (only include fields you can actually read):\n"
+    "- workout_screenshot (e.g. Arrow, Apple Fitness strength training): `workout_type`, "
+    "`duration_minutes`, `calories_burned`, `exercises` (a list of objects with `name` and "
+    "`sets`, where `sets` is a list of objects with `weight` and `reps` as plain numbers, "
+    "no unit text).\n"
+    "- cardio_screenshot (e.g. treadmill, Garmin run): `modality`, `duration_minutes`, "
+    "`distance_miles`, `average_heart_rate`, `incline`, `speed_mph`.\n"
+    "- nutrition_screenshot (e.g. MyFitnessPal 'Nutrients Remaining' widget, which shows "
+    "how much of the daily budget is left rather than how much has been consumed - read "
+    "the remaining amounts exactly as shown, which can be negative if the goal was "
+    "exceeded): `calories_remaining`, `protein_g_remaining`, `carbs_g_remaining`, "
+    "`fat_g_remaining`.\n"
+    "- sleep_screenshot: `time_asleep_minutes`, `bedtime`, `wake_time`, "
+    "`time_awake_minutes`, `light_minutes`, `deep_minutes`, `rem_minutes`, "
+    "`regularity_percent`, `sleep_latency_minutes`, `wake_up_mood`.\n"
+    "- progress_photo: a physique/body photo with no readable stats on it; leave `facts` "
+    "empty unless a scale or measurement is visible (`body_weight_lb`, `waist_inches`, "
+    "`body_fat_percent`).\n"
+    "If confidence is low, or you cannot tell what kind this is, set needs_clarification "
+    "to true."
+)
+
+
 @dataclass(frozen=True, slots=True)
 class VisionExtraction:
     """Structured output from image processing."""
@@ -68,6 +104,43 @@ class VisionProcessor:
                 retained_path = self._retain_progress_photo(tmp_path)
 
             extraction = self._analyze(user_id=user_id, image_paths=[tmp_path], kind=kind)
+            return VisionExtraction(
+                kind=kind,
+                confidence=extraction.get("confidence", 0.0),
+                needs_clarification=extraction.get("needs_clarification", True),
+                facts=extraction.get("facts", {}),
+                retained_path=str(retained_path) if retained_path else None,
+            )
+        finally:
+            if kind == ImageKind.PROGRESS_PHOTO:
+                tmp_path.unlink(missing_ok=True)
+            else:
+                self._delete_if_configured(tmp_path)
+
+    def process_auto(self, *, user_id: str, source_path: Path) -> VisionExtraction:
+        """Process a screenshot whose kind couldn't be inferred from message text.
+
+        Lets the vision model classify it directly instead of assuming a default kind.
+        """
+
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_path = self._copy_to_temp(source_path)
+        kind = ImageKind.WORKOUT_SCREENSHOT
+        retained_path: Path | None = None
+        try:
+            self._validate_image(tmp_path)
+            prompt = self.prompt_builder.build(user_id)
+            result = self.openai.analyze_images(
+                system_prompt=prompt,
+                image_paths=[tmp_path],
+                task=_AUTO_DETECT_TASK,
+            )
+            extraction = self._parse_extraction_result(result)
+            candidate = str(extraction.get("kind", "")).strip().lower()
+            if candidate in _VALID_IMAGE_KINDS:
+                kind = candidate
+            if kind == ImageKind.PROGRESS_PHOTO and self.settings.retain_progress_photos:
+                retained_path = self._retain_progress_photo(tmp_path)
             return VisionExtraction(
                 kind=kind,
                 confidence=extraction.get("confidence", 0.0),

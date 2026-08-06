@@ -198,11 +198,16 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                         coach = factory.coach_service(session)
                         processor = factory.vision_processor(session)
                         user = coach.get_user(str(message.author.id))
-                        extraction = processor.process(
-                            user_id=user.id,
-                            source_path=incoming_path,
-                            kind=kind,
-                        )
+                        if kind is None:
+                            extraction = processor.process_auto(
+                                user_id=user.id, source_path=incoming_path
+                            )
+                        else:
+                            extraction = processor.process(
+                                user_id=user.id,
+                                source_path=incoming_path,
+                                kind=kind,
+                            )
                         response = coach.store_vision_extraction(user.id, extraction)
                     replies.append(response.message)
                 finally:
@@ -282,7 +287,13 @@ def _is_image_attachment(attachment: discord.Attachment) -> bool:
     return content_type.startswith("image/") or suffix in {".jpg", ".jpeg", ".png", ".webp"}
 
 
-def _infer_image_kind(message_content: str, filename: str) -> str:
+def _infer_image_kind(message_content: str, filename: str) -> str | None:
+    """Guess the screenshot kind from message text/filename, or None if unclear.
+
+    Returning None (rather than defaulting to some kind) lets the caller fall back to
+    asking the vision model to classify the image itself instead of guessing wrong.
+    """
+
     text = f"{message_content} {filename}".lower()
     if "sleep" in text:
         return ImageKind.SLEEP_SCREENSHOT
@@ -292,4 +303,6 @@ def _infer_image_kind(message_content: str, filename: str) -> str:
         return ImageKind.NUTRITION_SCREENSHOT
     if "cardio" in text or "treadmill" in text or "garmin" in text or "run" in text:
         return ImageKind.CARDIO_SCREENSHOT
-    return ImageKind.WORKOUT_SCREENSHOT
+    if "workout" in text or "arrow" in text or "strength" in text or "lift" in text:
+        return ImageKind.WORKOUT_SCREENSHOT
+    return None
