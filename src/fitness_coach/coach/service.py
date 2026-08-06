@@ -242,7 +242,7 @@ class CoachService:
                 )
             )
             return CoachResponse(
-                message="Workout proof processed and stored as structured workout data.",
+                message=_format_workout_confirmation(event),
                 metadata={"event_id": event.id, "event_type": "workout_completed"},
             )
 
@@ -432,3 +432,49 @@ def _optional_datetime(value: Any) -> datetime | None:
         return datetime.fromisoformat(value)
     except ValueError:
         return None
+
+
+def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
+    """Build a bulleted summary of what was understood, so the user can spot-check it."""
+
+    header = event.workout_type
+    details = []
+    if event.duration_minutes:
+        details.append(f"{event.duration_minutes} min")
+    if event.calories_burned:
+        details.append(f"{event.calories_burned} cal")
+    if details:
+        header += f" ({', '.join(details)})"
+
+    lines = [f"Logged: {header}"]
+    for exercise in event.exercises:
+        name = exercise.get("name", "Exercise")
+        set_strs = [
+            part
+            for exercise_set in exercise.get("sets", [])
+            if (part := _format_set(exercise_set.get("weight"), exercise_set.get("reps")))
+        ]
+        lines.append(f"- {name}: {', '.join(set_strs)}" if set_strs else f"- {name}")
+    return "\n".join(lines)
+
+
+def _format_set(weight: Any, reps: Any) -> str | None:
+    weight_str = _format_number(weight)
+    reps_str = _format_number(reps)
+    if weight_str is not None and reps_str is not None:
+        return f"{weight_str}lbs x{reps_str}"
+    if reps_str is not None:
+        return f"x{reps_str}"
+    if weight_str is not None:
+        return f"{weight_str}lbs"
+    return None
+
+
+def _format_number(value: Any) -> str | None:
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return str(int(number)) if number == int(number) else str(number)
