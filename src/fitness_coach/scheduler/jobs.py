@@ -13,6 +13,7 @@ from discord.ext import commands
 
 from fitness_coach.analytics.reports import build_progress_metrics
 from fitness_coach.coach.factory import ServiceFactory
+from fitness_coach.coach.service import CoachService
 from fitness_coach.database.repositories import (
     CardioEventRepository,
     NutritionEventRepository,
@@ -57,29 +58,38 @@ def register_jobs(
     )
 
 
+def build_workout_text(coach: CoachService, user_id: str, timezone: str) -> str:
+    """Ask the coach for today's scheduled workout, per the Morning Workout Message format.
+
+    Kept separate from the morning check-in so it can also be sent once the user
+    actually reports their sleep, instead of appearing in both messages.
+    """
+
+    today = datetime.now(ZoneInfo(timezone)).strftime("%A, %B %d")
+    workout_prompt = (
+        f"Today is {today}. Following the Morning Workout Message format from your "
+        "instructions, tell me today's scheduled workout: the workout type, the five or "
+        "six exercises, sets, rep ranges, and brief guidance on intensity, form, rest, "
+        "and progression."
+    )
+    return coach.answer_question(user_id, workout_prompt).message
+
+
 def run_morning_check_in(factory: ServiceFactory, bot: commands.Bot) -> None:
-    """DM the user their sleep prompt and today's workout."""
+    """DM the user asking how they slept. Today's workout follows once they reply."""
 
     with factory.session() as session:
         coach = factory.coach_service(session)
         user = coach.get_user()
         discord_user_id = user.discord_user_id
-        if not discord_user_id:
-            logger.warning("morning_check_in_skipped_no_discord_user")
-            return
 
-        today = datetime.now(ZoneInfo(factory.coach_settings.timezone)).strftime("%A, %B %d")
-        workout_prompt = (
-            f"Today is {today}. Following the Morning Workout Message format from your "
-            "instructions, tell me today's scheduled workout: the workout type, the five or "
-            "six exercises, sets, rep ranges, and brief guidance on intensity, form, rest, "
-            "and progression."
-        )
-        workout_text = coach.answer_question(user.id, workout_prompt).message
+    if not discord_user_id:
+        logger.warning("morning_check_in_skipped_no_discord_user")
+        return
 
     message = (
         "Good morning! How'd you sleep last night? Send your SleepCycle screenshot "
-        '(mention "sleep") or just reply with total hours/minutes asleep.\n\n' + workout_text
+        '(mention "sleep") or just reply with total hours/minutes asleep.'
     )
     _dispatch_dm(bot, discord_user_id, message)
 

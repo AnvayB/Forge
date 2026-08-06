@@ -19,7 +19,7 @@ from fitness_coach.database.schemas import (
     SleepLog,
 )
 from fitness_coach.logging import configure_logging
-from fitness_coach.scheduler.jobs import build_scheduler
+from fitness_coach.scheduler.jobs import build_scheduler, build_workout_text
 from fitness_coach.vision.processor import ImageKind
 
 logger = logging.getLogger(__name__)
@@ -185,6 +185,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             return
         if message.attachments:
             replies: list[str] = []
+            logged_sleep = False
             for attachment in message.attachments:
                 if not _is_image_attachment(attachment):
                     continue
@@ -209,12 +210,40 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                                 kind=kind,
                             )
                         response = coach.store_vision_extraction(user.id, extraction)
+                        if (
+                            extraction.kind == ImageKind.SLEEP_SCREENSHOT
+                            and response.metadata.get("event_type") == "sleep_logged"
+                        ):
+                            logged_sleep = True
                     replies.append(response.message)
                 finally:
                     incoming_path.unlink(missing_ok=True)
+            if logged_sleep:
+                with factory.session() as session:
+                    coach = factory.coach_service(session)
+                    user = coach.get_user(str(message.author.id))
+                    replies.append(
+                        build_workout_text(coach, user.id, factory.coach_settings.timezone)
+                    )
             if replies:
                 await message.reply("\n".join(replies))
                 return
+        sleep_minutes = _try_parse_sleep_duration(message.content)
+        if sleep_minutes is not None:
+            with factory.session() as session:
+                coach = factory.coach_service(session)
+                user = coach.get_user(str(message.author.id))
+                response = coach.log_sleep(
+                    user.id,
+                    SleepLog(
+                        logged_for=datetime.now(UTC),
+                        time_asleep_minutes=sleep_minutes,
+                        notes="Logged from Discord free-text reply.",
+                    ),
+                )
+                workout_text = build_workout_text(coach, user.id, factory.coach_settings.timezone)
+            await message.reply(f"{response.message}\n\n{workout_text}")
+            return
         with factory.session() as session:
             coach = factory.coach_service(session)
             user = coach.get_user(str(message.author.id))
@@ -264,21 +293,36 @@ def run() -> None:
 _SLEEP_DURATION_PATTERN = re.compile(r"^(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m)?$", re.IGNORECASE)
 
 
-def _parse_sleep_duration(raw: str) -> int:
-    """Parse a sleep duration given as plain minutes ("398") or "6h38m" / "6h" / "38m"."""
+def _try_parse_sleep_duration(raw: str) -> int | None:
+    """Parse plain minutes ("398") or "6h38m" / "6h" / "38m", or None if it doesn't match.
+
+    Used to recognize a bare reply to the morning sleep check-in (e.g. "7h39m" with no
+    command prefix) without misfiring on unrelated plain-text messages.
+    """
 
     raw = raw.strip()
+    if not raw:
+        return None
     if raw.isdigit():
         return int(raw)
     match = _SLEEP_DURATION_PATTERN.match(raw)
     if not match or not (match.group("hours") or match.group("minutes")):
-        raise commands.BadArgument(
-            f'Could not parse "{raw}" as a sleep duration. Use minutes (e.g. `398`) or '
-            "hours/minutes (e.g. `6h38m`, `6h`, `38m`)."
-        )
+        return None
     hours = int(match.group("hours") or 0)
     minutes = int(match.group("minutes") or 0)
     return hours * 60 + minutes
+
+
+def _parse_sleep_duration(raw: str) -> int:
+    """Parse a sleep duration given as plain minutes ("398") or "6h38m" / "6h" / "38m"."""
+
+    minutes = _try_parse_sleep_duration(raw)
+    if minutes is None:
+        raise commands.BadArgument(
+            f'Could not parse "{raw.strip()}" as a sleep duration. Use minutes (e.g. `398`) '
+            "or hours/minutes (e.g. `6h38m`, `6h`, `38m`)."
+        )
+    return minutes
 
 
 def _is_image_attachment(attachment: discord.Attachment) -> bool:
