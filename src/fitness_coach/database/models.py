@@ -109,6 +109,7 @@ class WorkoutEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     workout_type: Mapped[str] = mapped_column(String(120))
     duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    calories_burned: Mapped[int | None] = mapped_column(Integer)
     perceived_effort: Mapped[int | None] = mapped_column(Integer)
     exercises: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     proof_source: Mapped[str | None] = mapped_column(String(80))

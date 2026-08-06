@@ -14,6 +14,7 @@ class WorkoutLog(BaseModel):
     occurred_at: datetime
     workout_type: str
     duration_minutes: int | None = None
+    calories_burned: int | None = Field(default=None, ge=0)
     perceived_effort: int | None = Field(default=None, ge=1, le=10)
     exercises: list[dict[str, Any]] = Field(default_factory=list)
     proof_source: str | None = None

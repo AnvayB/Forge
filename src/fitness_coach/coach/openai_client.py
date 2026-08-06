@@ -39,27 +39,46 @@ class CoachOpenAIClient:
         )
         return OpenAIResult(text=response.output_text, metadata={"model": self.model})
 
-    def analyze_image(self, *, system_prompt: str, image_path: Path, task: str) -> OpenAIResult:
-        """Analyze an uploaded image and return structured extraction text."""
+    def analyze_text(self, *, system_prompt: str, task: str, text: str) -> OpenAIResult:
+        """Analyze user-typed text (not an image) and return structured extraction text."""
 
         if self.client is None:
             return OpenAIResult(
                 text='{"confidence": 0.0, "needs_clarification": true, "facts": {}}',
-                metadata={"offline": True, "image_path": str(image_path)},
+                metadata={"offline": True},
             )
 
-        uploaded = self.client.files.create(file=image_path.open("rb"), purpose="vision")
         response = self.client.responses.create(
             model=self.model,
             instructions=system_prompt,
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": task},
-                        {"type": "input_image", "file_id": uploaded.id},
-                    ],
-                }
-            ],
+            input=f"{task}\n\n{text}",
+        )
+        return OpenAIResult(text=response.output_text, metadata={"model": self.model})
+
+    def analyze_image(self, *, system_prompt: str, image_path: Path, task: str) -> OpenAIResult:
+        """Analyze an uploaded image and return structured extraction text."""
+
+        return self.analyze_images(system_prompt=system_prompt, image_paths=[image_path], task=task)
+
+    def analyze_images(
+        self, *, system_prompt: str, image_paths: list[Path], task: str
+    ) -> OpenAIResult:
+        """Analyze one or more related images together and return one extraction."""
+
+        if self.client is None:
+            return OpenAIResult(
+                text='{"confidence": 0.0, "needs_clarification": true, "facts": {}}',
+                metadata={"offline": True, "image_paths": [str(path) for path in image_paths]},
+            )
+
+        content: list[dict[str, object]] = [{"type": "input_text", "text": task}]
+        for image_path in image_paths:
+            uploaded = self.client.files.create(file=image_path.open("rb"), purpose="vision")
+            content.append({"type": "input_image", "file_id": uploaded.id})
+
+        response = self.client.responses.create(
+            model=self.model,
+            instructions=system_prompt,
+            input=[{"role": "user", "content": content}],
         )
         return OpenAIResult(text=response.output_text, metadata={"model": self.model})

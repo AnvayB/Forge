@@ -11,15 +11,16 @@ from typing import Any
 
 from PIL import Image
 
-from fitness_coach.coach.openai_client import CoachOpenAIClient
+from fitness_coach.coach.openai_client import CoachOpenAIClient, OpenAIResult
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import CoachSettings
 
 
 class ImageKind:
-    """Supported image retention categories."""
+    """Supported extraction source categories."""
 
     WORKOUT_SCREENSHOT = "workout_screenshot"
+    WORKOUT_TEXT = "workout_text"
     CARDIO_SCREENSHOT = "cardio_screenshot"
     NUTRITION_SCREENSHOT = "nutrition_screenshot"
     SLEEP_SCREENSHOT = "sleep_screenshot"
@@ -66,7 +67,7 @@ class VisionProcessor:
             if kind == ImageKind.PROGRESS_PHOTO and self.settings.retain_progress_photos:
                 retained_path = self._retain_progress_photo(tmp_path)
 
-            extraction = self._analyze(user_id=user_id, image_path=tmp_path, kind=kind)
+            extraction = self._analyze(user_id=user_id, image_paths=[tmp_path], kind=kind)
             return VisionExtraction(
                 kind=kind,
                 confidence=extraction.get("confidence", 0.0),
@@ -79,6 +80,56 @@ class VisionProcessor:
                 tmp_path.unlink(missing_ok=True)
             else:
                 self._delete_if_configured(tmp_path)
+
+    def process_workout_screenshots(
+        self, *, user_id: str, source_paths: list[Path], extra_notes: str = ""
+    ) -> VisionExtraction:
+        """Process related workout screenshots (e.g. Arrow + Apple Fitness) as one workout."""
+
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_paths = [self._copy_to_temp(path) for path in source_paths]
+        try:
+            for tmp_path in tmp_paths:
+                self._validate_image(tmp_path)
+            extraction = self._analyze(
+                user_id=user_id,
+                image_paths=tmp_paths,
+                kind=ImageKind.WORKOUT_SCREENSHOT,
+                extra_notes=extra_notes,
+            )
+            return VisionExtraction(
+                kind=ImageKind.WORKOUT_SCREENSHOT,
+                confidence=extraction.get("confidence", 0.0),
+                needs_clarification=extraction.get("needs_clarification", True),
+                facts=extraction.get("facts", {}),
+                retained_path=None,
+            )
+        finally:
+            for tmp_path in tmp_paths:
+                self._delete_if_configured(tmp_path)
+
+    def process_workout_text(self, *, user_id: str, text: str) -> VisionExtraction:
+        """Parse a typed workout description into the same structured facts as a screenshot."""
+
+        prompt = self.prompt_builder.build(user_id)
+        task = (
+            "The user typed this workout description themselves (it is not a screenshot), "
+            "so treat it as ground truth and extract structured facts confidently unless "
+            "it is genuinely too vague to log. Return JSON with keys `confidence`, "
+            "`needs_clarification`, and `facts`. Put `workout_type`, `duration_minutes`, "
+            "`calories_burned` (only if mentioned), and `exercises` (a list of objects "
+            "with `name` and `sets`, where `sets` is a list of objects with `weight` and "
+            "`reps`) into `facts`, using only what the user actually stated."
+        )
+        result = self.openai.analyze_text(system_prompt=prompt, task=task, text=text)
+        extraction = self._parse_extraction_result(result)
+        return VisionExtraction(
+            kind=ImageKind.WORKOUT_TEXT,
+            confidence=extraction.get("confidence", 0.0),
+            needs_clarification=extraction.get("needs_clarification", True),
+            facts=extraction.get("facts", {}),
+            retained_path=None,
+        )
 
     def _copy_to_temp(self, source_path: Path) -> Path:
         destination = self.tmp_dir / f"{datetime.now(UTC).timestamp()}_{source_path.name}"
@@ -96,11 +147,19 @@ class VisionProcessor:
         shutil.copy2(image_path, retained_path)
         return retained_path
 
-    def _analyze(self, *, user_id: str, image_path: Path, kind: str) -> dict[str, Any]:
+    def _analyze(
+        self,
+        *,
+        user_id: str,
+        image_paths: list[Path],
+        kind: str,
+        extra_notes: str = "",
+    ) -> dict[str, Any]:
         prompt = self.prompt_builder.build(user_id)
+        image_word = "image" if len(image_paths) == 1 else "images"
         task = (
-            "Extract structured fitness facts from this image. Return JSON with keys "
-            "`confidence`, `needs_clarification`, and `facts`. The image kind is "
+            f"Extract structured fitness facts from the attached {image_word}. Return JSON "
+            "with keys `confidence`, `needs_clarification`, and `facts`. The image kind is "
             f"{kind}. If confidence is low, set needs_clarification to true."
         )
         if kind == ImageKind.NUTRITION_SCREENSHOT:
@@ -112,11 +171,27 @@ class VisionProcessor:
                 "`calories_remaining`, `protein_g_remaining`, `carbs_g_remaining`, and "
                 "`fat_g_remaining`."
             )
-        result = self.openai.analyze_image(
+        if kind == ImageKind.WORKOUT_SCREENSHOT:
+            task += (
+                " These may include an Arrow strength-training screenshot (exercises, sets, "
+                "reps, weight) and/or an Apple Fitness summary (workout type, duration, "
+                "calories burned, heart rate). Treat all attached images as describing the "
+                "same single workout session and merge them into one set of facts: "
+                "`workout_type`, `duration_minutes`, `calories_burned`, and `exercises` "
+                "(a list of objects with `name` and `sets`, where `sets` is a list of "
+                "objects with `weight` and `reps` since weight/reps can vary per set). "
+                "Only include fields you can actually read from an image."
+            )
+        if extra_notes:
+            task += f" The user also provided this note: {extra_notes!r}."
+        result = self.openai.analyze_images(
             system_prompt=prompt,
-            image_path=image_path,
+            image_paths=image_paths,
             task=task,
         )
+        return self._parse_extraction_result(result)
+
+    def _parse_extraction_result(self, result: OpenAIResult) -> dict[str, Any]:
         try:
             parsed = json.loads(result.text)
         except json.JSONDecodeError:

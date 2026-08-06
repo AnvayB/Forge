@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -16,7 +17,6 @@ from fitness_coach.database.schemas import (
     CardioLog,
     CommitmentCreate,
     SleepLog,
-    WorkoutLog,
 )
 from fitness_coach.logging import configure_logging
 from fitness_coach.scheduler.jobs import build_scheduler
@@ -52,18 +52,47 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         await ctx.reply(response.message)
 
     @bot.command(name="workout")
-    async def workout(ctx: commands.Context[commands.Bot], *, summary: str) -> None:
-        with factory.session() as session:
-            coach = factory.coach_service(session)
-            user = coach.get_user(str(ctx.author.id))
-            response = coach.log_workout(
-                user.id,
-                WorkoutLog(
-                    occurred_at=datetime.now(UTC),
-                    workout_type=summary,
-                    notes="Logged from Discord text command.",
-                ),
-            )
+    async def workout(ctx: commands.Context[commands.Bot], *, summary: str | None = None) -> None:
+        """Log a workout from text, or from one or more screenshots (Arrow, Apple Fitness)."""
+
+        image_attachments = [a for a in ctx.message.attachments if _is_image_attachment(a)]
+        if not image_attachments:
+            if not summary:
+                await ctx.reply(
+                    "Send a workout summary (e.g. `!workout Upper body, 45 min`) or attach "
+                    "your Arrow / Apple Fitness screenshot(s)."
+                )
+                return
+            with factory.session() as session:
+                coach = factory.coach_service(session)
+                processor = factory.vision_processor(session)
+                user = coach.get_user(str(ctx.author.id))
+                extraction = processor.process_workout_text(user_id=user.id, text=summary)
+                response = coach.store_vision_extraction(user.id, extraction)
+            await ctx.reply(response.message)
+            return
+
+        incoming_dir = factory.app_settings.uploads_dir / "tmp"
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        saved_paths: list[Path] = []
+        try:
+            for attachment in image_attachments:
+                path = incoming_dir / f"discord_{attachment.id}_{attachment.filename}"
+                await attachment.save(path)
+                saved_paths.append(path)
+            with factory.session() as session:
+                coach = factory.coach_service(session)
+                processor = factory.vision_processor(session)
+                user = coach.get_user(str(ctx.author.id))
+                extraction = processor.process_workout_screenshots(
+                    user_id=user.id,
+                    source_paths=saved_paths,
+                    extra_notes=summary or "",
+                )
+                response = coach.store_vision_extraction(user.id, extraction)
+        finally:
+            for path in saved_paths:
+                path.unlink(missing_ok=True)
         await ctx.reply(response.message)
 
     @bot.command(name="cardio")
@@ -108,8 +137,11 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
 
     @bot.command(name="sleep")
     async def sleep(
-        ctx: commands.Context[commands.Bot], time_asleep_minutes: int, *, notes: str = ""
+        ctx: commands.Context[commands.Bot], duration: str, *, notes: str = ""
     ) -> None:
+        """Log sleep as plain minutes (`398`) or an hours/minutes duration (`6h38m`)."""
+
+        time_asleep_minutes = _parse_sleep_duration(duration)
         with factory.session() as session:
             coach = factory.coach_service(session)
             user = coach.get_user(str(ctx.author.id))
@@ -122,6 +154,19 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                 ),
             )
         await ctx.reply(response.message)
+
+    @bot.event
+    async def on_command_error(
+        ctx: commands.Context[commands.Bot], error: commands.CommandError
+    ) -> None:
+        if isinstance(error, commands.CommandNotFound):
+            return
+        cause = error.original if isinstance(error, commands.CommandInvokeError) else error
+        if isinstance(cause, commands.UserInputError):
+            await ctx.reply(str(cause))
+            return
+        logger.exception("command_error", exc_info=error)
+        await ctx.reply("Something went wrong running that command.")
 
     @bot.command(name="commit")
     async def commit(ctx: commands.Context[commands.Bot], *, description: str) -> None:
@@ -209,6 +254,26 @@ def run() -> None:
     factory = ServiceFactory(app_settings, coach_settings)
     bot = build_bot(factory)
     bot.run(app_settings.discord_token)
+
+
+_SLEEP_DURATION_PATTERN = re.compile(r"^(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m)?$", re.IGNORECASE)
+
+
+def _parse_sleep_duration(raw: str) -> int:
+    """Parse a sleep duration given as plain minutes ("398") or "6h38m" / "6h" / "38m"."""
+
+    raw = raw.strip()
+    if raw.isdigit():
+        return int(raw)
+    match = _SLEEP_DURATION_PATTERN.match(raw)
+    if not match or not (match.group("hours") or match.group("minutes")):
+        raise commands.BadArgument(
+            f'Could not parse "{raw}" as a sleep duration. Use minutes (e.g. `398`) or '
+            "hours/minutes (e.g. `6h38m`, `6h`, `38m`)."
+        )
+    hours = int(match.group("hours") or 0)
+    minutes = int(match.group("minutes") or 0)
+    return hours * 60 + minutes
 
 
 def _is_image_attachment(attachment: discord.Attachment) -> bool:

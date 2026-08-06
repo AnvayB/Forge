@@ -88,6 +88,7 @@ class CoachService:
                 occurred_at=payload.occurred_at,
                 workout_type=payload.workout_type,
                 duration_minutes=payload.duration_minutes,
+                calories_burned=payload.calories_burned,
                 perceived_effort=payload.perceived_effort,
                 exercises=payload.exercises,
                 proof_source=payload.proof_source,
@@ -216,7 +217,7 @@ class CoachService:
         now = now or datetime.now(UTC)
         if extraction.needs_clarification or extraction.confidence < 0.5:
             return CoachResponse(
-                message="I need a clarification before logging that image as proof.",
+                message="I need a clarification before logging that as proof.",
                 metadata={
                     "event_type": "vision_clarification_required",
                     "confidence": extraction.confidence,
@@ -226,13 +227,14 @@ class CoachService:
 
         facts = extraction.facts
         notes = json.dumps(facts, sort_keys=True)
-        if extraction.kind == ImageKind.WORKOUT_SCREENSHOT:
+        if extraction.kind in (ImageKind.WORKOUT_SCREENSHOT, ImageKind.WORKOUT_TEXT):
             event = self.workouts.add(
                 models.WorkoutEvent(
                     user_id=user_id,
                     occurred_at=now,
                     workout_type=str(facts.get("workout_type", "Workout")),
                     duration_minutes=_optional_int(facts.get("duration_minutes")),
+                    calories_burned=_optional_int(facts.get("calories_burned")),
                     exercises=list(facts.get("exercises", [])),
                     proof_source=extraction.kind,
                     proof_confidence=extraction.confidence,
