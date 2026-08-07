@@ -114,12 +114,15 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
     @bot.command(name="nutrition")
     async def nutrition(
         ctx: commands.Context[commands.Bot],
-        carbs_remaining_g: float,
-        fat_remaining_g: float,
-        protein_remaining_g: float,
-        calories_remaining: float,
+        carbs_remaining_g: str,
+        fat_remaining_g: str,
+        protein_remaining_g: str,
+        calories_remaining: str,
     ) -> None:
-        """Log nutrition from the "remaining" amounts shown in MyFitnessPal."""
+        """Log nutrition from the "remaining" amounts shown in MyFitnessPal.
+
+        Accepts plain numbers or numbers with units (e.g. `188g`, `877cals`).
+        """
 
         with factory.session() as session:
             coach = factory.coach_service(session)
@@ -127,10 +130,10 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             response = coach.log_nutrition_remaining(
                 user.id,
                 logged_for=datetime.now(UTC),
-                calories_remaining=calories_remaining,
-                protein_remaining_g=protein_remaining_g,
-                carbs_remaining_g=carbs_remaining_g,
-                fat_remaining_g=fat_remaining_g,
+                calories_remaining=_parse_macro_value(calories_remaining),
+                protein_remaining_g=_parse_macro_value(protein_remaining_g),
+                carbs_remaining_g=_parse_macro_value(carbs_remaining_g),
+                fat_remaining_g=_parse_macro_value(fat_remaining_g),
                 notes="Logged from Discord text command.",
             )
         await ctx.reply(response.message)
@@ -323,6 +326,21 @@ def _parse_sleep_duration(raw: str) -> int:
             "or hours/minutes (e.g. `6h38m`, `6h`, `38m`)."
         )
     return minutes
+
+
+_MACRO_VALUE_PATTERN = re.compile(r"[-+]?\d*\.?\d+")
+
+
+def _parse_macro_value(raw: str) -> float:
+    """Parse a macro amount that may carry units (e.g. "188g", "-15g", "877cals")."""
+
+    match = _MACRO_VALUE_PATTERN.search(raw)
+    if not match:
+        raise commands.BadArgument(
+            f'Could not parse "{raw.strip()}" as a number. Use a plain number, with or '
+            "without units (e.g. `188`, `188g`, `877cals`)."
+        )
+    return float(match.group())
 
 
 def _is_image_attachment(attachment: discord.Attachment) -> bool:
