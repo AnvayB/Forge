@@ -31,8 +31,11 @@
 
 ## Tuesday — Chest + Back + Shoulders
 
-Core workout (shoulder work is placed mid-session, not at the end, so it doesn't get
-skipped when time or energy runs out):
+Core workout, ordered to alternate push/pull movements so no pressing exercise is
+performed on pre-fatigued synergists from the one before it, and shoulder work is placed
+mid-session (not at the end) so it doesn't get skipped when time or energy runs out.
+Lat pulldown goes first as a light shoulder warm-up before the heavier incline press,
+given shoulders are a known sensitive point:
 
 - Lat pulldown
 - Incline chest press (dumbbell, barbell, or machine)
@@ -87,7 +90,7 @@ Still keep it built around exercises that are genuinely enjoyed — that's what 
 
 ## Sunday — Lower
 
-Keep this identical to Thursday's leg routine, plus weighted back extensions when time allows — Sunday has more time available than Thursday. Having a consistent leg routine at all is already a big improvement (none since ~2022). Prioritize getting progressively stronger within this routine over introducing variation.
+Keep this identical to Thursday's leg routine, plus weighted back extensions when time allows — Sunday has more time available than Thursday. Add back extensions at the very end of the session (after calf raises), not before the leg press: they load the lower back and glutes/hamstrings, which also stabilize the spine during the leg press, so doing them first risks a fatigued lower back under heavy leg press load. Having a consistent leg routine at all is already a big improvement (none since ~2022). Prioritize getting progressively stronger within this routine over introducing variation.
 
 ## Monday & Friday — Rest
 
