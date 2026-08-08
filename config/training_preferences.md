@@ -31,13 +31,14 @@
 
 ## Tuesday — Chest + Back + Shoulders
 
-Core workout:
+Core workout (shoulder work is placed mid-session, not at the end, so it doesn't get
+skipped when time or energy runs out):
 
 - Lat pulldown
 - Incline chest press (dumbbell, barbell, or machine)
+- Shoulder press
 - Mid-row (e.g. T-bar row)
 - Flat bench press (dumbbell, barbell, or machine)
-- Shoulder press
 - Dumbbell shrugs (traps)
 
 Optional finisher if energy allows: an additional pulling movement, such as assisted pull-ups.
@@ -46,9 +47,10 @@ Optional finisher if energy allows: an additional pulling movement, such as assi
 
 - Bicep curls
 - Tricep pushdowns
+- Cable lateral raises (**IMPORTANT** — always include; placed mid-session, not at the
+  end, so it doesn't get skipped when time or energy runs out)
 - Preacher curls
 - Second tricep exercise: rotate between **single-arm cross-body cable extension** and **cable kickbacks** (picked day-of). Both avoid skull crushers and overhead tricep extensions, which bother the elbows.
-- Cable lateral raises (**IMPORTANT** — always include)
 - Dumbbell wrist curls (forearms — 1 of 2 weekly sessions)
 
 ## Thursday — Legs
@@ -67,9 +69,10 @@ Built around favorite compound movements:
 
 - Incline chest press
 - One back movement (lat pulldown or mid-row, depending on how the day feels)
+- Lat raises (placed mid-session, not at the end, so it doesn't get skipped when time or
+  energy runs out)
 - Preacher curls
 - A tricep exercise
-- Lat raises
 - Dumbbell wrist curls (forearms — 2 of 2 weekly sessions)
 
 More room for variety here — rotate in:
@@ -84,7 +87,7 @@ Still keep it built around exercises that are genuinely enjoyed — that's what 
 
 ## Sunday — Lower
 
-For now, keep this identical to Thursday's leg routine. Having a consistent leg routine at all is already a big improvement (none since ~2022). Prioritize getting progressively stronger within this routine over introducing variation.
+Keep this identical to Thursday's leg routine, plus weighted back extensions when time allows — Sunday has more time available than Thursday. Having a consistent leg routine at all is already a big improvement (none since ~2022). Prioritize getting progressively stronger within this routine over introducing variation.
 
 ## Monday & Friday — Rest
 
