@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fitness_coach.database.repositories import (
     CoachNoteRepository,
     CommitmentEventRepository,
     ConversationMemoryRepository,
     InjuryHistoryRepository,
+    PlanOverrideRepository,
 )
 from fitness_coach.database.schemas import MemoryFact
 
@@ -22,11 +25,15 @@ class MemoryService:
         commitments: CommitmentEventRepository,
         injuries: InjuryHistoryRepository,
         coach_notes: CoachNoteRepository,
+        plan_overrides: PlanOverrideRepository,
+        timezone: str,
     ) -> None:
         self.memory_repo = memory_repo
         self.commitments = commitments
         self.injuries = injuries
         self.coach_notes = coach_notes
+        self.plan_overrides = plan_overrides
+        self.timezone = timezone
 
     def upsert_fact(self, user_id: str, fact: MemoryFact) -> None:
         """Create or update a summarized memory fact."""
@@ -46,6 +53,8 @@ class MemoryService:
         commitments = self.commitments.open_for_user(user_id)
         injuries = self.injuries.active_for_user(user_id)
         notes = self.coach_notes.active_for_user(user_id)
+        today = datetime.now(ZoneInfo(self.timezone)).date()
+        overrides = self.plan_overrides.active_for_user(user_id, today)
 
         return {
             "memory_facts": {fact.key: fact.value for fact in facts},
@@ -73,5 +82,13 @@ class MemoryService:
                     "note": note.note,
                 }
                 for note in notes
+            ],
+            "active_plan_overrides": [
+                {
+                    "description": override.description,
+                    "starts_on": override.starts_on.isoformat(),
+                    "expires_on": override.expires_on.isoformat(),
+                }
+                for override in overrides
             ],
         }

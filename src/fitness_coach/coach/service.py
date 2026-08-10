@@ -17,6 +17,7 @@ from fitness_coach.database.repositories import (
     ConversationMemoryRepository,
     MeasurementEventRepository,
     NutritionEventRepository,
+    PlanOverrideRepository,
     ProgressReviewRepository,
     SleepEventRepository,
     UserRepository,
@@ -28,6 +29,7 @@ from fitness_coach.database.schemas import (
     CoachResponse,
     CommitmentCreate,
     NutritionLog,
+    PlanOverrideCreate,
     SleepLog,
     WorkoutLog,
 )
@@ -57,6 +59,7 @@ class CoachService:
         workout_plans: WorkoutPlanRepository,
         progress_reviews: ProgressReviewRepository,
         memory: ConversationMemoryRepository,
+        plan_overrides: PlanOverrideRepository,
     ) -> None:
         self.settings = settings
         self.prompt_builder = prompt_builder
@@ -71,6 +74,7 @@ class CoachService:
         self.workout_plans = workout_plans
         self.progress_reviews = progress_reviews
         self.memory = memory
+        self.plan_overrides = plan_overrides
 
     def get_user(self, discord_user_id: str | None = None) -> models.User:
         """Get or create the single application user."""
@@ -185,6 +189,25 @@ class CoachService:
             ),
             should_follow_up=True,
             metadata={"event_id": event.id, "event_type": "commitment_created"},
+        )
+
+    def create_plan_override(self, user_id: str, payload: PlanOverrideCreate) -> CoachResponse:
+        """Log a short-lived deviation from the default training schedule."""
+
+        event = self.plan_overrides.add(
+            models.PlanOverride(
+                user_id=user_id,
+                description=payload.description,
+                starts_on=payload.starts_on,
+                expires_on=payload.expires_on,
+            )
+        )
+        return CoachResponse(
+            message=(
+                f"Noted through {payload.expires_on.isoformat()} - the default schedule "
+                "resumes automatically after that."
+            ),
+            metadata={"event_id": event.id, "event_type": "plan_override_created"},
         )
 
     def complete_commitment(self, commitment_id: str) -> CoachResponse:

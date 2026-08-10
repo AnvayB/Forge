@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -90,6 +90,14 @@ class CommitmentCreate(BaseModel):
 
     description: str
     due_at: datetime | None = None
+
+
+class PlanOverrideCreate(BaseModel):
+    """Input schema for a short-lived deviation from the default training schedule."""
+
+    description: str
+    starts_on: date
+    expires_on: date
 
 
 class MemoryFact(BaseModel):

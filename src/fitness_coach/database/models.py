@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -238,6 +239,23 @@ class ProgressReview(Base):
     metrics: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     narrative: Mapped[str] = mapped_column(Text, default="")
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class PlanOverride(Base):
+    """A short-lived deviation from the default training schedule, agreed in chat.
+
+    Unlike CommitmentEvent, this has no manual "completed" step - it's active purely
+    for the starts_on..expires_on date range, then stops applying on its own.
+    """
+
+    __tablename__ = "plan_overrides"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    description: Mapped[str] = mapped_column(Text)
+    starts_on: Mapped[date] = mapped_column(Date, index=True)
+    expires_on: Mapped[date] = mapped_column(Date, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class ConversationMemory(Base):

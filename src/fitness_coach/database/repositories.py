@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -182,6 +182,20 @@ class CommitmentEventRepository(Repository[models.CommitmentEvent]):
         commitment.completed_at = completed_at or datetime.now(UTC)
         self.session.flush()
         return commitment
+
+
+class PlanOverrideRepository(Repository[models.PlanOverride]):
+    """Repository for short-lived schedule overrides."""
+
+    model = models.PlanOverride
+
+    def active_for_user(self, user_id: str, on_date: date) -> list[models.PlanOverride]:
+        stmt = select(models.PlanOverride).where(
+            models.PlanOverride.user_id == user_id,
+            models.PlanOverride.starts_on <= on_date,
+            models.PlanOverride.expires_on >= on_date,
+        )
+        return list(self.session.scalars(stmt))
 
 
 class WorkoutPlanRepository(Repository[models.WorkoutPlan]):

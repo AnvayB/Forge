@@ -6,6 +6,7 @@ import logging
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import discord
 from discord.ext import commands
@@ -22,6 +23,7 @@ from fitness_coach.database.repositories import (
 from fitness_coach.database.schemas import (
     CardioLog,
     CommitmentCreate,
+    PlanOverrideCreate,
     SleepLog,
 )
 from fitness_coach.logging import configure_logging
@@ -183,6 +185,30 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             coach = factory.coach_service(session)
             user = coach.get_user(str(ctx.author.id))
             response = coach.create_commitment(user.id, CommitmentCreate(description=description))
+        await ctx.reply(response.message)
+
+    @bot.command(name="adjust")
+    async def adjust(ctx: commands.Context[commands.Bot], days: int, *, description: str) -> None:
+        """Log a short-lived deviation from the default schedule (e.g. moving a workout day).
+
+        Applies from today through `days` day(s) from now, inclusive, then the default
+        schedule in training_preferences.md resumes automatically - no need to clear it.
+        """
+
+        if days < 1:
+            raise commands.BadArgument("`days` must be at least 1.")
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            today = datetime.now(ZoneInfo(factory.coach_settings.timezone)).date()
+            response = coach.create_plan_override(
+                user.id,
+                PlanOverrideCreate(
+                    description=description,
+                    starts_on=today,
+                    expires_on=today + timedelta(days=days - 1),
+                ),
+            )
         await ctx.reply(response.message)
 
     @bot.command(name="progress")

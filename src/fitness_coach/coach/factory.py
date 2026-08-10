@@ -20,6 +20,7 @@ from fitness_coach.database.repositories import (
     InjuryHistoryRepository,
     MeasurementEventRepository,
     NutritionEventRepository,
+    PlanOverrideRepository,
     ProgressReviewRepository,
     SleepEventRepository,
     UserRepository,
@@ -77,6 +78,7 @@ class ServiceFactory:
             workout_plans=WorkoutPlanRepository(session),
             progress_reviews=ProgressReviewRepository(session),
             memory=ConversationMemoryRepository(session),
+            plan_overrides=PlanOverrideRepository(session),
         )
 
     def memory_service(self, session: Session) -> MemoryService:
@@ -87,6 +89,8 @@ class ServiceFactory:
             commitments=CommitmentEventRepository(session),
             injuries=InjuryHistoryRepository(session),
             coach_notes=CoachNoteRepository(session),
+            plan_overrides=PlanOverrideRepository(session),
+            timezone=self.coach_settings.timezone,
         )
 
     def vision_processor(self, session: Session) -> VisionProcessor:
@@ -117,6 +121,7 @@ class ServiceFactory:
             "commitments": CommitmentEventRepository(session),
             "progress_reviews": ProgressReviewRepository(session),
             "memory": ConversationMemoryRepository(session),
+            "plan_overrides": PlanOverrideRepository(session),
             "goals": GoalRepository(session),
             "injuries": InjuryHistoryRepository(session),
             "plans": WorkoutPlanRepository(session),
