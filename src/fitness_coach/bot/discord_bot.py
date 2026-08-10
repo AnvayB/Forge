@@ -4,15 +4,21 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import discord
 from discord.ext import commands
 
+from fitness_coach.analytics.reports import build_progress_metrics
 from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.settings import get_app_settings, get_coach_settings
+from fitness_coach.database.repositories import (
+    CardioEventRepository,
+    NutritionEventRepository,
+    WorkoutEventRepository,
+)
 from fitness_coach.database.schemas import (
     CardioLog,
     CommitmentCreate,
@@ -178,6 +184,47 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             user = coach.get_user(str(ctx.author.id))
             response = coach.create_commitment(user.id, CommitmentCreate(description=description))
         await ctx.reply(response.message)
+
+    @bot.command(name="progress")
+    async def progress(ctx: commands.Context[commands.Bot]) -> None:
+        """Deliver the periodic progress review, on its configured cadence only.
+
+        Analytics are intentionally locked between review periods (see the Analytics
+        Philosophy in coach_principles.md), so this does not compute fresh stats on
+        every call - it only surfaces a review once one is actually due.
+        """
+
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            now = datetime.now(UTC)
+            due_at = coach.next_review_due_at(user.id, now)
+            if due_at is not None:
+                days_left = (due_at - now).days + 1
+                await ctx.reply(
+                    f"Your next progress review isn't due for about {days_left} more "
+                    "day(s) - analytics stay locked until then by design."
+                )
+                return
+
+            start = now - timedelta(days=factory.coach_settings.review_interval_days)
+            workouts = WorkoutEventRepository(session).between(user.id, start, now)
+            cardio = CardioEventRepository(session).between(user.id, start, now)
+            nutrition = NutritionEventRepository(session).between(user.id, start, now)
+            metrics = build_progress_metrics(
+                workouts=workouts,
+                cardio_events=cardio,
+                nutrition_events=nutrition,
+                start=start,
+                end=now,
+                today=now.date(),
+                protein_goal_g=factory.coach_settings.protein_goal_g,
+            )
+            review = coach.maybe_generate_review(user.id, metrics, now)
+        if review is None:
+            await ctx.reply("No progress review is available right now.")
+            return
+        await ctx.reply(review.narrative)
 
     @bot.event
     async def on_message(message: discord.Message) -> None:

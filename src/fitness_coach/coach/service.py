@@ -377,7 +377,7 @@ class CoachService:
         now = now or datetime.now(UTC)
         latest = self.progress_reviews.latest_for_user(user_id)
         review_interval = timedelta(days=self.settings.review_interval_days)
-        if latest and now - latest.generated_at < review_interval:
+        if latest and now - _ensure_utc(latest.generated_at) < review_interval:
             return None
 
         period_start = now - timedelta(days=self.settings.review_interval_days)
@@ -399,6 +399,17 @@ class CoachService:
                 narrative=explanation.text,
             )
         )
+
+    def next_review_due_at(self, user_id: str, now: datetime | None = None) -> datetime | None:
+        """Return when the next progress review is due, or None if one is due now."""
+
+        now = now or datetime.now(UTC)
+        latest = self.progress_reviews.latest_for_user(user_id)
+        if latest is None:
+            return None
+        interval = timedelta(days=self.settings.review_interval_days)
+        due_at = _ensure_utc(latest.generated_at) + interval
+        return due_at if due_at > now else None
 
     def _asks_for_locked_analytics(self, message: str) -> bool:
         if not self.settings.analytics_locked:
@@ -433,6 +444,18 @@ def _optional_datetime(value: Any) -> datetime | None:
         return datetime.fromisoformat(value)
     except ValueError:
         return None
+
+
+def _ensure_utc(value: datetime) -> datetime:
+    """Reattach UTC if missing.
+
+    SQLite doesn't round-trip tzinfo: a DateTime(timezone=True) column reads back
+    tz-aware only within the same session that wrote it, and naive once re-fetched
+    from a fresh query. Comparing that naive value against datetime.now(UTC) raises
+    TypeError, so normalize before any arithmetic.
+    """
+
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
