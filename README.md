@@ -3,7 +3,7 @@
 A Discord-first AI fitness accountability coach built around structured memory, event-driven
 SQLite persistence, deterministic analytics, and a thin Discord adapter.
 
-This is not a replacement for MyFitnessPal, Hevy, Apple Health, Garmin, or ChatGPT. It is a
+This is not a replacement for MyFitnessPal, Arrow, Apple Health, Garmin, or ChatGPT. It is a
 long-term accountability partner that reduces decision fatigue, tracks only structured summaries,
 and provides periodic reviews on the configured cadence.
 

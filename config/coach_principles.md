@@ -196,7 +196,7 @@ Instead, complement them.
 Examples include:
 
 * MyFitnessPal
-* Hevy
+* Arrow
 * Apple Health
 * Garmin
 * other tracking applications
@@ -254,7 +254,7 @@ The AI should encourage accountability through proof of completed workouts.
 
 Acceptable proof may include:
 
-* Hevy screenshots
+* Arrow screenshots
 * Apple Fitness screenshots
 * treadmill displays
 * smartwatch workout summaries
