@@ -110,6 +110,15 @@ class NutritionEventRepository(Repository[models.NutritionEvent]):
 
     model = models.NutritionEvent
 
+    def recent(self, user_id: str, limit: int = 10) -> list[models.NutritionEvent]:
+        stmt = (
+            select(models.NutritionEvent)
+            .where(models.NutritionEvent.user_id == user_id)
+            .order_by(models.NutritionEvent.logged_for.desc())
+            .limit(limit)
+        )
+        return list(self.session.scalars(stmt))
+
     def between(
         self, user_id: str, start: datetime, end: datetime
     ) -> list[models.NutritionEvent]:

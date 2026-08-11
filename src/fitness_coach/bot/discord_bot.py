@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import discord
@@ -18,6 +20,7 @@ from fitness_coach.config.settings import get_app_settings, get_coach_settings
 from fitness_coach.database.repositories import (
     CardioEventRepository,
     NutritionEventRepository,
+    SleepEventRepository,
     WorkoutEventRepository,
 )
 from fitness_coach.database.schemas import (
@@ -252,6 +255,58 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             return
         await ctx.reply(review.narrative)
 
+    @bot.command(name="recent")
+    async def recent(ctx: commands.Context[commands.Bot], count: int = 5) -> None:
+        """Show the most recently logged entries per category, straight from the database.
+
+        This is a raw event listing (a sanity check that logging is working), not an
+        analytics view - no streaks, averages, or trends, since those stay locked until
+        the scheduled progress review (see `!progress`).
+        """
+
+        count = max(1, min(count, 20))
+        tz = ZoneInfo(factory.coach_settings.timezone)
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            workouts = WorkoutEventRepository(session).recent(user.id, limit=count)
+            cardio = CardioEventRepository(session).recent(user.id, limit=count)
+            nutrition = NutritionEventRepository(session).recent(user.id, limit=count)
+            sleep = SleepEventRepository(session).recent(user.id, limit=count)
+
+        sections = [
+            _format_recent_section(
+                "Workouts",
+                workouts,
+                tz,
+                timestamp_of=lambda e: e.occurred_at,
+                detail_of=lambda e: e.workout_type
+                + (f" ({e.duration_minutes} min)" if e.duration_minutes else ""),
+            ),
+            _format_recent_section(
+                "Cardio",
+                cardio,
+                tz,
+                timestamp_of=lambda e: e.occurred_at,
+                detail_of=lambda e: f"{e.modality} ({e.duration_minutes} min)",
+            ),
+            _format_recent_section(
+                "Nutrition",
+                nutrition,
+                tz,
+                timestamp_of=lambda e: e.logged_for,
+                detail_of=lambda e: f"{e.calories} cal, {e.protein_g:.0f}g protein",
+            ),
+            _format_recent_section(
+                "Sleep",
+                sleep,
+                tz,
+                timestamp_of=lambda e: e.logged_for,
+                detail_of=lambda e: _format_sleep_minutes(e.time_asleep_minutes),
+            ),
+        ]
+        await ctx.reply("\n\n".join(sections))
+
     @bot.event
     async def on_message(message: discord.Message) -> None:
         if message.author.bot:
@@ -414,6 +469,29 @@ def _parse_macro_value(raw: str) -> float:
             "without units (e.g. `188`, `188g`, `877cals`)."
         )
     return float(match.group())
+
+
+def _format_recent_section(
+    title: str,
+    events: list[Any],
+    tz: ZoneInfo,
+    *,
+    timestamp_of: Callable[[Any], datetime],
+    detail_of: Callable[[Any], str],
+) -> str:
+    if not events:
+        return f"**{title}**\nNothing logged yet."
+    lines = [f"**{title}**"]
+    for event in events:
+        local_time = timestamp_of(event).astimezone(tz)
+        lines.append(f"- {local_time.strftime('%a %b %d, %I:%M %p')} — {detail_of(event)}")
+    return "\n".join(lines)
+
+
+def _format_sleep_minutes(minutes: int | None) -> str:
+    if minutes is None:
+        return "no duration recorded"
+    return f"{minutes // 60}h {minutes % 60}m"
 
 
 def _is_image_attachment(attachment: discord.Attachment) -> bool:

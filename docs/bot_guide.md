@@ -23,6 +23,7 @@ These only fire once the bot has captured your Discord user ID — send it at le
 | `!commit` | `!commit I'll do cardio tomorrow morning` | Saves an accountability commitment (a to-do to follow up on) |
 | `!adjust` | `!adjust 2 Shift chest/back to Monday, cardio/rest Tuesday this week` | Logs a short-lived deviation from the default schedule — applies for the given number of days starting today, then the default split resumes automatically. Use this whenever the coach agrees to a schedule change in chat, since it won't otherwise remember |
 | `!progress` | `!progress` | Delivers your periodic progress review, but only once it's actually due (default: every 30 days) — analytics stay locked between review periods by design |
+| `!recent` | `!recent` or `!recent 10` | Lists your last few logged workouts, cardio, nutrition, and sleep entries straight from the database (default 5 each, max 20) — a raw sanity check that logging is working, not an analytics view, so it stays available even while `!progress` is locked |
 
 ## Image uploads
 

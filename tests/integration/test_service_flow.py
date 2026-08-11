@@ -10,7 +10,11 @@ from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
-from fitness_coach.database.repositories import SleepEventRepository, WorkoutEventRepository
+from fitness_coach.database.repositories import (
+    NutritionEventRepository,
+    SleepEventRepository,
+    WorkoutEventRepository,
+)
 from fitness_coach.database.schemas import NutritionLog, SleepLog, WorkoutLog
 from fitness_coach.vision.processor import ImageKind, VisionExtraction
 
@@ -50,11 +54,14 @@ def test_service_logs_structured_events(factory: ServiceFactory) -> None:
             ),
         )
         workouts = WorkoutEventRepository(session).recent(user.id)
+        nutrition_logs = NutritionEventRepository(session).recent(user.id)
 
     assert workout_response.metadata["event_type"] == "workout_completed"
     assert nutrition_response.metadata["event_type"] == "nutrition_logged"
     assert len(workouts) == 1
     assert workouts[0].workout_type == "Upper"
+    assert len(nutrition_logs) == 1
+    assert nutrition_logs[0].calories == 2100
 
 
 def test_service_logs_sleep(factory: ServiceFactory) -> None:
