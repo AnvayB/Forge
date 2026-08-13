@@ -64,6 +64,39 @@ def test_service_logs_structured_events(factory: ServiceFactory) -> None:
     assert nutrition_logs[0].calories == 2100
 
 
+def test_log_workout_congratulates_new_personal_record(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        first = coach.log_workout(
+            user.id,
+            WorkoutLog(
+                occurred_at=datetime(2026, 7, 1, tzinfo=UTC),
+                workout_type="Arms",
+                exercises=[
+                    {"name": "Cable Lateral Raise", "sets": [{"weight": 12, "reps": 20}]}
+                ],
+            ),
+        )
+        second = coach.log_workout(
+            user.id,
+            WorkoutLog(
+                occurred_at=datetime(2026, 7, 8, tzinfo=UTC),
+                workout_type="Arms",
+                exercises=[
+                    {"name": "Cable Lateral Raise", "sets": [{"weight": 15, "reps": 20}]}
+                ],
+            ),
+        )
+
+    assert first.metadata["personal_records"] == []
+    assert "PR" not in first.message
+    assert second.metadata["personal_records"] == ["Cable Lateral Raise"]
+    assert "New PR" in second.message
+    assert "15lbs x20" in second.message
+    assert "up from 12lbs x20" in second.message
+
+
 def test_service_logs_sleep(factory: ServiceFactory) -> None:
     with factory.session() as session:
         coach = factory.coach_service(session)

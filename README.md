@@ -49,7 +49,7 @@ All commands are used via Discord DM (or any channel the bot is in), prefixed wi
 | Command | What it does | Example |
 |---|---|---|
 | `!checkin` | Accountability nudge — surfaces today's plan and any open commitments | `!checkin` |
-| `!workout` | Logs a completed workout from free text or one or more Arrow/Apple Fitness screenshots; typed exercise lists get parsed into structured sets | `!workout bicep curl: 30lbs x10, 35lbs x5` |
+| `!workout` | Logs a completed workout from free text or one or more Arrow/Apple Fitness screenshots; typed exercise lists get parsed into structured sets, and any set that beats your prior best for that exercise is flagged as a new PR | `!workout bicep curl: 30lbs x10, 35lbs x5` |
 | `!cardio` | Logs cardio as minutes + modality | `!cardio 35 incline walk` |
 | `!nutrition` | Logs carbs, fat, protein, and calories **remaining** (MyFitnessPal's "Nutrients Remaining" numbers), in that order | `!nutrition 129g -1g 90g 814cals` |
 | `!sleep` | Logs sleep as plain minutes or an `Xh Ym` duration | `!sleep 6h38m` |

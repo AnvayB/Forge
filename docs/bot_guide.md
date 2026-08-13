@@ -16,7 +16,7 @@ These only fire once the bot has captured your Discord user ID — send it at le
 | Command | Example | What it does |
 |---|---|---|
 | `!checkin` | `!checkin` | Accountability nudge — your plan for today, open commitments |
-| `!workout` | `!workout Chest/back/shoulders, felt strong` or attach one or more Arrow/Apple Fitness screenshots | Logs a completed workout — free text and typed exercise lists (e.g. `bicep curl: 30lbs x10, 35lbs x5`) get parsed into structured sets, same as a screenshot would |
+| `!workout` | `!workout Chest/back/shoulders, felt strong` or attach one or more Arrow/Apple Fitness screenshots | Logs a completed workout — free text and typed exercise lists (e.g. `bicep curl: 30lbs x10, 35lbs x5`) get parsed into structured sets, same as a screenshot would. If a set beats every prior set you've logged for that exercise (by estimated one-rep max), the confirmation calls it out as a new PR — a single-event fact, not locked analytics |
 | `!cardio` | `!cardio 35 incline walk` | Logs cardio — minutes, then modality |
 | `!nutrition` | `!nutrition 129g -1g 90g 814cals` | Logs carbs, fat, protein, calories **remaining** (MyFitnessPal's "Nutrients Remaining" numbers) — in that order; units like `g`/`cals` are optional, plain numbers work too |
 | `!sleep` | `!sleep 6h38m` or `!sleep 398` | Logs sleep — plain minutes or an `Xh Ym` duration |

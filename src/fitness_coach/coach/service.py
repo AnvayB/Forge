@@ -7,6 +7,7 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from fitness_coach.analytics.strength import PersonalRecord, find_new_personal_records
 from fitness_coach.coach.openai_client import CoachOpenAIClient
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import CoachSettings
@@ -38,6 +39,16 @@ from fitness_coach.vision.processor import ImageKind, VisionExtraction
 
 class AnalyticsLockedError(PermissionError):
     """Raised when a request would reveal locked cumulative analytics."""
+
+
+_PR_HISTORY_LIMIT = 2000
+"""How many past workouts to scan for a personal-record comparison.
+
+PR detection is a single-event fact (did this set beat every prior one), not a
+cumulative statistic, so it's exempt from the analytics lock - see the Analytics
+Philosophy in coach_principles.md and "acknowledge meaningful effort" under
+Accountability Philosophy.
+"""
 
 
 class CoachService:
@@ -87,6 +98,7 @@ class CoachService:
     def log_workout(self, user_id: str, payload: WorkoutLog) -> CoachResponse:
         """Persist a completed workout event."""
 
+        history = self.workouts.list_for_user(user_id, limit=_PR_HISTORY_LIMIT)
         event = self.workouts.add(
             models.WorkoutEvent(
                 user_id=user_id,
@@ -101,9 +113,17 @@ class CoachService:
                 notes=payload.notes,
             )
         )
+        records = find_new_personal_records(history=history, new_exercises=event.exercises)
+        message = "Workout logged. Good, practical consistency point for today."
+        if records:
+            message = f"{message}\n\n{_format_pr_congratulations(records)}"
         return CoachResponse(
-            message="Workout logged. Good, practical consistency point for today.",
-            metadata={"event_id": event.id, "event_type": "workout_completed"},
+            message=message,
+            metadata={
+                "event_id": event.id,
+                "event_type": "workout_completed",
+                "personal_records": [record.exercise for record in records],
+            },
         )
 
     def log_cardio(self, user_id: str, payload: CardioLog) -> CoachResponse:
@@ -252,6 +272,7 @@ class CoachService:
         facts = extraction.facts
         notes = json.dumps(facts, sort_keys=True)
         if extraction.kind in (ImageKind.WORKOUT_SCREENSHOT, ImageKind.WORKOUT_TEXT):
+            history = self.workouts.list_for_user(user_id, limit=_PR_HISTORY_LIMIT)
             event = self.workouts.add(
                 models.WorkoutEvent(
                     user_id=user_id,
@@ -265,9 +286,17 @@ class CoachService:
                     notes=notes,
                 )
             )
+            records = find_new_personal_records(history=history, new_exercises=event.exercises)
+            message = _format_workout_confirmation(event)
+            if records:
+                message = f"{message}\n\n{_format_pr_congratulations(records)}"
             return CoachResponse(
-                message=_format_workout_confirmation(event),
-                metadata={"event_id": event.id, "event_type": "workout_completed"},
+                message=message,
+                metadata={
+                    "event_id": event.id,
+                    "event_type": "workout_completed",
+                    "personal_records": [record.exercise for record in records],
+                },
             )
 
         if extraction.kind == ImageKind.CARDIO_SCREENSHOT:
@@ -503,6 +532,24 @@ def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
         ]
         rendered = ", ".join(_collapse_repeats(set_strs))
         lines.append(f"- {name}: {rendered}" if rendered else f"- {name}")
+    return "\n".join(lines)
+
+
+def _format_pr_congratulations(records: list[PersonalRecord]) -> str:
+    """Format a calm, factual note for newly logged personal records.
+
+    Keeps praise earned rather than hyped, per the Communication Style principles -
+    just the exercise and the numbers, not exclamation points.
+    """
+
+    header = "New PR:" if len(records) == 1 else "New PRs:"
+    lines = [header]
+    for record in records:
+        previous_weight = _format_number(record.previous_weight)
+        previous_reps = _format_number(record.previous_reps)
+        current = f"{_format_number(record.weight)}lbs x{_format_number(record.reps)}"
+        previous = f"{previous_weight}lbs x{previous_reps}"
+        lines.append(f"- {record.exercise}: {current} (up from {previous})")
     return "\n".join(lines)
 
 

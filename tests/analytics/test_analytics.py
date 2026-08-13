@@ -15,7 +15,11 @@ from fitness_coach.analytics.nutrition import (
     protein_goal_adherence,
 )
 from fitness_coach.analytics.reports import build_progress_metrics
-from fitness_coach.analytics.strength import best_weight_by_exercise, total_workout_volume
+from fitness_coach.analytics.strength import (
+    best_weight_by_exercise,
+    find_new_personal_records,
+    total_workout_volume,
+)
 
 
 @dataclass
@@ -97,6 +101,35 @@ def test_strength_volume_and_best_weight() -> None:
     )
     assert total_workout_volume(workout) == 4110
     assert best_weight_by_exercise([workout]) == {"incline bench press": 145}
+
+
+def test_find_new_personal_records_requires_prior_history() -> None:
+    history = [
+        WorkoutFixture(
+            dt(2026, 7, 1),
+            exercises=[{"name": "Cable Lateral Raise", "sets": [{"weight": 12, "reps": 20}]}],
+        )
+    ]
+    # No prior "Dumbbell Hammer Curl" history, so it shouldn't count as a PR yet.
+    new_exercises = [
+        {"name": "Cable Lateral Raise", "sets": [{"weight": 15, "reps": 20}]},
+        {"name": "Dumbbell Hammer Curl", "sets": [{"weight": 30, "reps": 5}]},
+    ]
+    records = find_new_personal_records(history=history, new_exercises=new_exercises)
+    assert [r.exercise for r in records] == ["Cable Lateral Raise"]
+    assert records[0].weight == 15
+    assert records[0].previous_weight == 12
+
+
+def test_find_new_personal_records_ignores_sets_that_dont_beat_history() -> None:
+    history = [
+        WorkoutFixture(
+            dt(2026, 7, 1),
+            exercises=[{"name": "Bench Press", "sets": [{"weight": 135, "reps": 8}]}],
+        )
+    ]
+    new_exercises = [{"name": "Bench Press", "sets": [{"weight": 115, "reps": 8}]}]
+    assert find_new_personal_records(history=history, new_exercises=new_exercises) == []
 
 
 def test_progress_metrics_are_deterministic() -> None:
