@@ -34,7 +34,7 @@ def build_progress_metrics(
     cardio_list = list(cardio_events)
     nutrition_list = list(nutrition_events)
     active_dates = unique_event_dates([*workout_list, *cardio_list])
-    nutrition_averages = average_nutrition(nutrition_list)
+    nutrition_averages = average_nutrition(nutrition_list, start, end)
 
     return {
         "period": {
@@ -53,7 +53,9 @@ def build_progress_metrics(
         "cardio": asdict(summarize_cardio(cardio_list)),
         "nutrition": {
             "averages": asdict(nutrition_averages),
-            "protein_goal_adherence": protein_goal_adherence(nutrition_list, protein_goal_g),
+            "protein_goal_adherence": protein_goal_adherence(
+                nutrition_list, protein_goal_g, start, end
+            ),
             "missing_days": missing_nutrition_days(nutrition_list, start, end),
         },
     }

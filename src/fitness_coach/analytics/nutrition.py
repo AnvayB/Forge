@@ -29,31 +29,58 @@ class NutritionAverages:
     fat_g: float
 
 
-def average_nutrition(events: Iterable[NutritionLike]) -> NutritionAverages:
-    """Compute average nutrition values across logged days."""
+def average_nutrition(
+    events: Iterable[NutritionLike],
+    start: datetime,
+    end: datetime,
+) -> NutritionAverages:
+    """Compute average nutrition values across the full period.
 
-    event_list = list(events)
-    days = len(event_list)
-    if days == 0:
-        return NutritionAverages(0, 0.0, 0.0, 0.0, 0.0)
+    A calendar day in [start, end] without a nutrition log is treated as an
+    unlogged day substantially below goal, not excluded from the average.
+    """
+
+    if end < start:
+        raise ValueError("end must be on or after start")
+    event_list = [
+        event for event in events if start.date() <= event.logged_for.date() <= end.date()
+    ]
+    total_days = (end.date() - start.date()).days + 1
+    if total_days == 0:
+        return NutritionAverages(len(event_list), 0.0, 0.0, 0.0, 0.0)
 
     return NutritionAverages(
-        days_logged=days,
-        calories=sum(event.calories for event in event_list) / days,
-        protein_g=sum(event.protein_g for event in event_list) / days,
-        carbs_g=sum(event.carbs_g for event in event_list) / days,
-        fat_g=sum(event.fat_g for event in event_list) / days,
+        days_logged=len(event_list),
+        calories=sum(event.calories for event in event_list) / total_days,
+        protein_g=sum(event.protein_g for event in event_list) / total_days,
+        carbs_g=sum(event.carbs_g for event in event_list) / total_days,
+        fat_g=sum(event.fat_g for event in event_list) / total_days,
     )
 
 
-def protein_goal_adherence(events: Iterable[NutritionLike], protein_goal_g: float) -> float:
-    """Return the share of logged days that met the protein goal."""
+def protein_goal_adherence(
+    events: Iterable[NutritionLike],
+    protein_goal_g: float,
+    start: datetime,
+    end: datetime,
+) -> float:
+    """Return the share of days in the period that met the protein goal.
 
-    event_list = list(events)
-    if not event_list:
+    Days without a nutrition log count against adherence rather than being
+    excluded, since an unlogged day is assumed to be well below goal.
+    """
+
+    if end < start:
+        raise ValueError("end must be on or after start")
+    total_days = (end.date() - start.date()).days + 1
+    if total_days == 0:
         return 0.0
-    met = sum(1 for event in event_list if event.protein_g >= protein_goal_g)
-    return met / len(event_list)
+    met_days = {
+        event.logged_for.date()
+        for event in events
+        if start.date() <= event.logged_for.date() <= end.date() and event.protein_g >= protein_goal_g
+    }
+    return len(met_days) / total_days
 
 
 def missing_nutrition_days(

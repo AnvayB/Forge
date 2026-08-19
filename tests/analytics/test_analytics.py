@@ -80,10 +80,18 @@ def test_nutrition_averages_and_protein_goal() -> None:
         NutritionFixture(dt(2026, 7, 1), 2200, 150, 250, 70),
         NutritionFixture(dt(2026, 7, 2), 2000, 120, 220, 60),
     ]
-    averages = average_nutrition(events)
+    averages = average_nutrition(events, dt(2026, 7, 1), dt(2026, 7, 2))
     assert averages.days_logged == 2
     assert averages.calories == 2100
-    assert protein_goal_adherence(events, 150) == 0.5
+    assert protein_goal_adherence(events, 150, dt(2026, 7, 1), dt(2026, 7, 2)) == 0.5
+
+
+def test_nutrition_averages_and_protein_goal_treat_unlogged_days_as_below_goal() -> None:
+    events = [NutritionFixture(dt(2026, 7, 1), 2200, 150, 250, 70)]
+    averages = average_nutrition(events, dt(2026, 7, 1), dt(2026, 7, 3))
+    assert averages.days_logged == 1
+    assert averages.calories == 2200 / 3
+    assert protein_goal_adherence(events, 150, dt(2026, 7, 1), dt(2026, 7, 3)) == 1 / 3
 
 
 def test_missing_nutrition_days_handles_leap_year() -> None:
@@ -144,7 +152,7 @@ def test_progress_metrics_are_deterministic() -> None:
     )
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["cardio"]["total_minutes"] == 20
-    assert metrics["nutrition"]["protein_goal_adherence"] == 1.0
+    assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
 
 
 @given(st.lists(st.dates(min_value=date(2020, 1, 1), max_value=date(2020, 1, 31))))
