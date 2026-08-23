@@ -208,6 +208,7 @@ def test_cardio_screenshot_extraction_stores_structured_cardio(factory: ServiceF
             "modality": "Indoor Run",
             "duration_minutes": 21,
             "distance_miles": 1.43,
+            "calories_burned": 227,
             "average_heart_rate": 168,
         },
         retained_path=None,
@@ -223,6 +224,8 @@ def test_cardio_screenshot_extraction_stores_structured_cardio(factory: ServiceF
     assert events[0].modality == "Indoor Run"
     assert events[0].duration_minutes == 21
     assert events[0].distance_miles == 1.43
+    assert events[0].calories_burned == 227
+    assert response.message == "Logged: Indoor Run (21 min, 1.43 mi, 227 cal, 168 bpm avg)"
 
 
 def test_vision_processor_processes_cardio_screenshot(
