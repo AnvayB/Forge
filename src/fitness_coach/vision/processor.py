@@ -159,6 +159,28 @@ class VisionProcessor:
     ) -> VisionExtraction:
         """Process related workout screenshots (e.g. Arrow + Apple Fitness) as one workout."""
 
+        return self._process_screenshots(
+            user_id=user_id,
+            source_paths=source_paths,
+            kind=ImageKind.WORKOUT_SCREENSHOT,
+            extra_notes=extra_notes,
+        )
+
+    def process_cardio_screenshots(
+        self, *, user_id: str, source_paths: list[Path], extra_notes: str = ""
+    ) -> VisionExtraction:
+        """Process one or more cardio screenshots (e.g. Apple Fitness, Garmin) as one session."""
+
+        return self._process_screenshots(
+            user_id=user_id,
+            source_paths=source_paths,
+            kind=ImageKind.CARDIO_SCREENSHOT,
+            extra_notes=extra_notes,
+        )
+
+    def _process_screenshots(
+        self, *, user_id: str, source_paths: list[Path], kind: str, extra_notes: str = ""
+    ) -> VisionExtraction:
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
         tmp_paths = [self._copy_to_temp(path) for path in source_paths]
         try:
@@ -167,11 +189,11 @@ class VisionProcessor:
             extraction = self._analyze(
                 user_id=user_id,
                 image_paths=tmp_paths,
-                kind=ImageKind.WORKOUT_SCREENSHOT,
+                kind=kind,
                 extra_notes=extra_notes,
             )
             return VisionExtraction(
-                kind=ImageKind.WORKOUT_SCREENSHOT,
+                kind=kind,
                 confidence=extraction.get("confidence", 0.0),
                 needs_clarification=extraction.get("needs_clarification", True),
                 facts=extraction.get("facts", {}),
