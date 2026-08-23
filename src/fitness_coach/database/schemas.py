@@ -29,6 +29,7 @@ class CardioLog(BaseModel):
     modality: str
     duration_minutes: int = Field(gt=0)
     distance_miles: float | None = Field(default=None, ge=0)
+    calories_burned: int | None = Field(default=None, ge=0)
     average_heart_rate: int | None = Field(default=None, ge=0)
     incline: float | None = None
     speed_mph: float | None = Field(default=None, ge=0)

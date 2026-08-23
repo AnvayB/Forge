@@ -307,6 +307,7 @@ class CoachService:
                     modality=str(facts.get("modality", "cardio")),
                     duration_minutes=_optional_int(facts.get("duration_minutes")) or 0,
                     distance_miles=_optional_float(facts.get("distance_miles")),
+                    calories_burned=_optional_int(facts.get("calories_burned")),
                     average_heart_rate=_optional_int(facts.get("average_heart_rate")),
                     incline=_optional_float(facts.get("incline")),
                     speed_mph=_optional_float(facts.get("speed_mph")),
@@ -316,7 +317,7 @@ class CoachService:
                 )
             )
             return CoachResponse(
-                message="Cardio proof processed and stored as structured cardio data.",
+                message=_format_cardio_confirmation(event),
                 metadata={"event_id": event.id, "event_type": "cardio_completed"},
             )
 
@@ -533,6 +534,25 @@ def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
         rendered = ", ".join(_collapse_repeats(set_strs))
         lines.append(f"- {name}: {rendered}" if rendered else f"- {name}")
     return "\n".join(lines)
+
+
+def _format_cardio_confirmation(event: models.CardioEvent) -> str:
+    """Build a summary of what was understood from a cardio screenshot, for spot-checking."""
+
+    details = []
+    if event.duration_minutes:
+        details.append(f"{event.duration_minutes} min")
+    if event.distance_miles:
+        details.append(f"{event.distance_miles:g} mi")
+    if event.calories_burned:
+        details.append(f"{event.calories_burned} cal")
+    if event.average_heart_rate:
+        details.append(f"{event.average_heart_rate} bpm avg")
+
+    header = event.modality
+    if details:
+        header += f" ({', '.join(details)})"
+    return f"Logged: {header}"
 
 
 def _format_pr_congratulations(records: list[PersonalRecord]) -> str:

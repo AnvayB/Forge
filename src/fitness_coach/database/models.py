@@ -132,6 +132,7 @@ class CardioEvent(Base):
     modality: Mapped[str] = mapped_column(String(120))
     duration_minutes: Mapped[int] = mapped_column(Integer)
     distance_miles: Mapped[float | None] = mapped_column(Float)
+    calories_burned: Mapped[int | None] = mapped_column(Integer)
     average_heart_rate: Mapped[int | None] = mapped_column(Integer)
     incline: Mapped[float | None] = mapped_column(Float)
     speed_mph: Mapped[float | None] = mapped_column(Float)

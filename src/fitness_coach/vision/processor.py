@@ -46,7 +46,7 @@ _AUTO_DETECT_TASK = (
     "`sets`, where `sets` is a list of objects with `weight` and `reps` as plain numbers, "
     "no unit text).\n"
     "- cardio_screenshot (e.g. treadmill, Garmin run): `modality`, `duration_minutes`, "
-    "`distance_miles`, `average_heart_rate`, `incline`, `speed_mph`.\n"
+    "`distance_miles`, `calories_burned`, `average_heart_rate`, `incline`, `speed_mph`.\n"
     "- nutrition_screenshot (e.g. MyFitnessPal 'Nutrients Remaining' widget, which shows "
     "how much of the daily budget is left rather than how much has been consumed - read "
     "the remaining amounts exactly as shown, which can be negative if the goal was "
@@ -266,6 +266,15 @@ class VisionProcessor:
                 "daily goal was already exceeded) and put them in `facts` as "
                 "`calories_remaining`, `protein_g_remaining`, `carbs_g_remaining`, and "
                 "`fat_g_remaining`."
+            )
+        if kind == ImageKind.CARDIO_SCREENSHOT:
+            task += (
+                " Put `modality` (e.g. Indoor Run, Outdoor Bike), `duration_minutes`, "
+                "`distance_miles`, `calories_burned`, `average_heart_rate`, `incline`, and "
+                "`speed_mph` into `facts` (only fields you can actually read). If the "
+                "screenshot shows both Active and Total calories (e.g. Apple Fitness), use "
+                "Active Calories for `calories_burned`, since that is the exercise itself "
+                "rather than the full-day total."
             )
         if kind == ImageKind.WORKOUT_SCREENSHOT:
             task += (
