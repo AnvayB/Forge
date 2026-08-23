@@ -11,6 +11,7 @@ from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
 from fitness_coach.database.repositories import (
+    CardioEventRepository,
     NutritionEventRepository,
     SleepEventRepository,
     WorkoutEventRepository,
@@ -194,6 +195,52 @@ def test_vision_processor_deletes_temp_screenshot(
         )
 
     tmp_files = list((tmp_path / "uploads" / "tmp").glob("*"))
+    assert extraction.needs_clarification is True
+    assert tmp_files == []
+
+
+def test_cardio_screenshot_extraction_stores_structured_cardio(factory: ServiceFactory) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.CARDIO_SCREENSHOT,
+        confidence=0.9,
+        needs_clarification=False,
+        facts={
+            "modality": "Indoor Run",
+            "duration_minutes": 21,
+            "distance_miles": 1.43,
+            "average_heart_rate": 168,
+        },
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+        events = CardioEventRepository(session).recent(user.id)
+
+    assert response.metadata["event_type"] == "cardio_completed"
+    assert len(events) == 1
+    assert events[0].modality == "Indoor Run"
+    assert events[0].duration_minutes == 21
+    assert events[0].distance_miles == 1.43
+
+
+def test_vision_processor_processes_cardio_screenshot(
+    factory: ServiceFactory, tmp_path: Path
+) -> None:
+    image_path = tmp_path / "cardio.png"
+    Image.new("RGB", (10, 10), color="white").save(image_path)
+
+    with factory.session() as session:
+        user = factory.coach_service(session).get_user("123")
+        processor = factory.vision_processor(session)
+        extraction = processor.process_cardio_screenshots(
+            user_id=user.id,
+            source_paths=[image_path],
+        )
+
+    tmp_files = list((tmp_path / "uploads" / "tmp").glob("*"))
+    assert extraction.kind == ImageKind.CARDIO_SCREENSHOT
     assert extraction.needs_clarification is True
     assert tmp_files == []
 

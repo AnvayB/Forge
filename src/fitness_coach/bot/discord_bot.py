@@ -107,19 +107,48 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         await ctx.reply(response.message)
 
     @bot.command(name="cardio")
-    async def cardio(ctx: commands.Context[commands.Bot], minutes: int, *, modality: str) -> None:
-        with factory.session() as session:
-            coach = factory.coach_service(session)
-            user = coach.get_user(str(ctx.author.id))
-            response = coach.log_cardio(
-                user.id,
-                CardioLog(
-                    occurred_at=datetime.now(UTC),
-                    modality=modality,
-                    duration_minutes=minutes,
-                    notes="Logged from Discord text command.",
-                ),
-            )
+    async def cardio(ctx: commands.Context[commands.Bot], *, args: str | None = None) -> None:
+        """Log cardio from text (e.g. `!cardio 20 run`) or a screenshot (Apple Fitness, Garmin)."""
+
+        image_attachments = [a for a in ctx.message.attachments if _is_image_attachment(a)]
+        if not image_attachments:
+            minutes, modality = _parse_cardio_args(args)
+            with factory.session() as session:
+                coach = factory.coach_service(session)
+                user = coach.get_user(str(ctx.author.id))
+                response = coach.log_cardio(
+                    user.id,
+                    CardioLog(
+                        occurred_at=datetime.now(UTC),
+                        modality=modality,
+                        duration_minutes=minutes,
+                        notes="Logged from Discord text command.",
+                    ),
+                )
+            await ctx.reply(response.message)
+            return
+
+        incoming_dir = factory.app_settings.uploads_dir / "tmp"
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        saved_paths: list[Path] = []
+        try:
+            for attachment in image_attachments:
+                path = incoming_dir / f"discord_{attachment.id}_{attachment.filename}"
+                await attachment.save(path)
+                saved_paths.append(path)
+            with factory.session() as session:
+                coach = factory.coach_service(session)
+                processor = factory.vision_processor(session)
+                user = coach.get_user(str(ctx.author.id))
+                extraction = processor.process_cardio_screenshots(
+                    user_id=user.id,
+                    source_paths=saved_paths,
+                    extra_notes=args or "",
+                )
+                response = coach.store_vision_extraction(user.id, extraction)
+        finally:
+            for path in saved_paths:
+                path.unlink(missing_ok=True)
         await ctx.reply(response.message)
 
     @bot.command(name="nutrition")
@@ -454,6 +483,28 @@ def _parse_sleep_duration(raw: str) -> int:
             "or hours/minutes (e.g. `6h38m`, `6h`, `38m`)."
         )
     return minutes
+
+
+def _parse_cardio_args(raw: str | None) -> tuple[int, str]:
+    """Parse "<minutes> <modality>" text args for `!cardio` (e.g. "20 run")."""
+
+    text = (raw or "").strip()
+    if not text:
+        raise commands.BadArgument(
+            "Send `!cardio <minutes> <modality>` (e.g. `!cardio 20 run`) or attach your "
+            "cardio screenshot (Apple Fitness, Garmin, etc.)."
+        )
+    parts = text.split(maxsplit=1)
+    if len(parts) < 2:
+        raise commands.BadArgument("`modality` is a required argument that is missing.")
+    minutes_raw, modality = parts
+    try:
+        minutes = int(minutes_raw)
+    except ValueError as error:
+        raise commands.BadArgument(
+            f'Could not parse "{minutes_raw}" as minutes. Use a whole number (e.g. `20`).'
+        ) from error
+    return minutes, modality
 
 
 _MACRO_VALUE_PATTERN = re.compile(r"[-+]?\d*\.?\d+")
