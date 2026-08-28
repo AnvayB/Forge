@@ -100,6 +100,62 @@ def test_log_workout_congratulates_new_personal_record(factory: ServiceFactory) 
     assert "up from 12lbs x20" in second.message
 
 
+def test_workout_baseline_status_is_judged_and_promotes_after_five_sessions(
+    factory: ServiceFactory,
+) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.set_exercise_baseline(user.id, "Bench Press", 135, 185)
+
+        def log(day: int, weight: float) -> str:
+            response = coach.log_workout(
+                user.id,
+                WorkoutLog(
+                    occurred_at=datetime(2026, 7, day, tzinfo=UTC),
+                    workout_type="Push",
+                    exercises=[
+                        {"name": "Bench Press", "sets": [{"weight": weight, "reps": 8}]}
+                    ],
+                ),
+            )
+            return response.message
+
+        assert "Status: Bench Press — Good" in log(1, 135)
+        assert "Status: Bench Press — Under" in log(2, 125)
+        assert "Status: Bench Press — Over" in log(3, 150)
+
+        # 5 consecutive sessions at 145 promotes the baseline to 145.
+        for day in range(4, 8):
+            assert "Baseline updated" not in log(day, 145)
+        promoted_message = log(8, 145)
+        assert "Baseline updated: Bench Press is now 145lbs" in promoted_message
+
+        baselines = coach.list_exercise_baselines(user.id)
+    assert len(baselines) == 1
+    assert baselines[0].baseline_weight == 145
+
+
+def test_set_exercise_baseline_overwrite_resets_streak(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.set_exercise_baseline(user.id, "Squat", 135)
+        coach.log_workout(
+            user.id,
+            WorkoutLog(
+                occurred_at=datetime(2026, 7, 1, tzinfo=UTC),
+                workout_type="Legs",
+                exercises=[{"name": "Squat", "sets": [{"weight": 145, "reps": 5}]}],
+            ),
+        )
+        coach.set_exercise_baseline(user.id, "Squat", 145)
+        baselines = coach.list_exercise_baselines(user.id)
+    assert baselines[0].baseline_weight == 145
+    assert baselines[0].tracked_weight is None
+    assert baselines[0].consecutive_sessions_at_tracked_weight == 0
+
+
 def test_service_logs_sleep(factory: ServiceFactory) -> None:
     with factory.session() as session:
         coach = factory.coach_service(session)

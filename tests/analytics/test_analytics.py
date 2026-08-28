@@ -16,8 +16,11 @@ from fitness_coach.analytics.nutrition import (
 )
 from fitness_coach.analytics.reports import build_progress_metrics
 from fitness_coach.analytics.strength import (
+    best_set_among,
     best_weight_by_exercise,
     find_new_personal_records,
+    judge_against_baseline,
+    next_tracked_weight,
     total_workout_volume,
 )
 
@@ -138,6 +141,64 @@ def test_find_new_personal_records_ignores_sets_that_dont_beat_history() -> None
     ]
     new_exercises = [{"name": "Bench Press", "sets": [{"weight": 115, "reps": 8}]}]
     assert find_new_personal_records(history=history, new_exercises=new_exercises) == []
+
+
+def test_best_set_among_ranks_by_estimated_one_rep_max() -> None:
+    exercises = [
+        {
+            "name": "Bench Press",
+            "sets": [{"weight": 135, "reps": 8}, {"weight": 145, "reps": 3}],
+        }
+    ]
+    assert best_set_among(exercises) == {"bench press": (135, 8)}
+
+
+def test_judge_against_baseline_boundaries() -> None:
+    # +/-5% band around a 100lb baseline: 95-105 is "good".
+    assert judge_against_baseline(logged_weight=94.9, baseline_weight=100, max_weight=None) == (
+        "under",
+        False,
+    )
+    assert judge_against_baseline(logged_weight=95, baseline_weight=100, max_weight=None) == (
+        "good",
+        False,
+    )
+    assert judge_against_baseline(logged_weight=105, baseline_weight=100, max_weight=None) == (
+        "good",
+        False,
+    )
+    assert judge_against_baseline(logged_weight=105.1, baseline_weight=100, max_weight=None) == (
+        "over",
+        False,
+    )
+
+
+def test_judge_against_baseline_flags_near_max() -> None:
+    verdict, near_max = judge_against_baseline(
+        logged_weight=95, baseline_weight=100, max_weight=100
+    )
+    assert verdict == "good"
+    assert near_max is True
+
+    _, near_max_far = judge_against_baseline(logged_weight=100, baseline_weight=100, max_weight=200)
+    assert near_max_far is False
+
+
+def test_next_tracked_weight_increments_on_match_and_resets_on_change() -> None:
+    tracked, streak = next_tracked_weight(
+        current_tracked_weight=145, current_streak=2, logged_weight=145
+    )
+    assert (tracked, streak) == (145, 3)
+
+    tracked, streak = next_tracked_weight(
+        current_tracked_weight=145, current_streak=4, logged_weight=150
+    )
+    assert (tracked, streak) == (150, 1)
+
+    tracked, streak = next_tracked_weight(
+        current_tracked_weight=None, current_streak=0, logged_weight=135
+    )
+    assert (tracked, streak) == (135, 1)
 
 
 def test_progress_metrics_are_deterministic() -> None:

@@ -10,6 +10,7 @@ from fitness_coach.database.repositories import (
     CoachNoteRepository,
     CommitmentEventRepository,
     ConversationMemoryRepository,
+    ExerciseBaselineRepository,
     InjuryHistoryRepository,
     PlanOverrideRepository,
 )
@@ -26,6 +27,7 @@ class MemoryService:
         injuries: InjuryHistoryRepository,
         coach_notes: CoachNoteRepository,
         plan_overrides: PlanOverrideRepository,
+        exercise_baselines: ExerciseBaselineRepository,
         timezone: str,
     ) -> None:
         self.memory_repo = memory_repo
@@ -33,6 +35,7 @@ class MemoryService:
         self.injuries = injuries
         self.coach_notes = coach_notes
         self.plan_overrides = plan_overrides
+        self.exercise_baselines = exercise_baselines
         self.timezone = timezone
 
     def upsert_fact(self, user_id: str, fact: MemoryFact) -> None:
@@ -55,6 +58,7 @@ class MemoryService:
         notes = self.coach_notes.active_for_user(user_id)
         today = datetime.now(ZoneInfo(self.timezone)).date()
         overrides = self.plan_overrides.active_for_user(user_id, today)
+        baselines = self.exercise_baselines.list_for_user(user_id)
 
         return {
             "memory_facts": {fact.key: fact.value for fact in facts},
@@ -90,5 +94,16 @@ class MemoryService:
                     "expires_on": override.expires_on.isoformat(),
                 }
                 for override in overrides
+            ],
+            "exercise_baselines": [
+                {
+                    "exercise": baseline.display_name,
+                    "baseline_weight": baseline.baseline_weight,
+                    "max_weight": baseline.max_weight,
+                    "consecutive_sessions_at_current_weight": (
+                        baseline.consecutive_sessions_at_tracked_weight
+                    ),
+                }
+                for baseline in baselines
             ],
         }

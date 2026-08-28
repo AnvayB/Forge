@@ -305,6 +305,26 @@ class InjuryHistory(Base):
     last_noted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class ExerciseBaseline(Base):
+    """Per-exercise baseline/max weight, judged against on every logged set."""
+
+    __tablename__ = "exercise_baselines"
+    __table_args__ = (
+        UniqueConstraint("user_id", "exercise_name", name="uq_baseline_user_exercise"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    exercise_name: Mapped[str] = mapped_column(String(120))
+    display_name: Mapped[str] = mapped_column(String(120))
+    baseline_weight: Mapped[float] = mapped_column(Float)
+    max_weight: Mapped[float | None] = mapped_column(Float)
+    tracked_weight: Mapped[float | None] = mapped_column(Float)
+    consecutive_sessions_at_tracked_weight: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
 class CoachNote(Base):
     """Internal structured note the coach can use for future context."""
 

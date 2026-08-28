@@ -109,6 +109,78 @@ def best_set_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, tuple[flo
     return best
 
 
+_BASELINE_TOLERANCE = 0.05
+"""±5% of baseline counts as "good" - agreed with the user for the baseline judgment feature."""
+
+_NEAR_MAX_THRESHOLD = 0.95
+"""A logged weight at or above 95% of the user's max gets a sustainability caveat."""
+
+PROMOTION_STREAK = 5
+"""Consecutive sessions at a new weight before the baseline auto-promotes."""
+
+
+def best_set_among(exercises: list[dict[str, Any]]) -> dict[str, tuple[float, float]]:
+    """Return the best (weight, reps) set per exercise within a single exercises list.
+
+    Same estimated-1RM ranking as `best_set_by_exercise`, but scoped to one already
+    -fetched list (e.g. a single newly-logged workout) instead of a workout history
+    iterable.
+    """
+
+    best: dict[str, tuple[float, float]] = {}
+    best_1rm: dict[str, float] = {}
+    for exercise in exercises:
+        name = str(exercise.get("name", "unknown")).strip().lower()
+        for exercise_set in exercise.get("sets") or []:
+            weight = _to_float(exercise_set.get("weight"))
+            reps = _to_float(exercise_set.get("reps"))
+            if weight <= 0 or reps <= 0:
+                continue
+            one_rm = _one_rep_max_estimate(weight, reps)
+            if one_rm > best_1rm.get(name, 0.0):
+                best_1rm[name] = one_rm
+                best[name] = (weight, reps)
+    return best
+
+
+def judge_against_baseline(
+    *, logged_weight: float, baseline_weight: float, max_weight: float | None
+) -> tuple[str, bool]:
+    """Return (verdict, near_max) for a logged weight against a baseline.
+
+    Verdict is "under" / "good" / "over" using a ±5% band around baseline_weight.
+    near_max flags a weight at or above 95% of max_weight (when known) as an extra
+    sustainability caveat - not a fourth verdict tier.
+    """
+
+    lower = baseline_weight * (1 - _BASELINE_TOLERANCE)
+    upper = baseline_weight * (1 + _BASELINE_TOLERANCE)
+    if logged_weight < lower:
+        verdict = "under"
+    elif logged_weight > upper:
+        verdict = "over"
+    else:
+        verdict = "good"
+    max_threshold = _NEAR_MAX_THRESHOLD * max_weight if max_weight else None
+    near_max = max_threshold is not None and max_weight > 0 and logged_weight >= max_threshold
+    return verdict, near_max
+
+
+def next_tracked_weight(
+    *, current_tracked_weight: float | None, current_streak: int, logged_weight: float
+) -> tuple[float, int]:
+    """Return the updated (tracked_weight, consecutive_sessions) after logging a weight.
+
+    Increments the streak when the logged weight matches what's already being
+    tracked; otherwise starts tracking the new weight with a streak of 1. The caller
+    decides whether the resulting streak has reached the promotion threshold.
+    """
+
+    if current_tracked_weight is not None and abs(logged_weight - current_tracked_weight) < 0.01:
+        return current_tracked_weight, current_streak + 1
+    return logged_weight, 1
+
+
 def find_new_personal_records(
     *, history: Iterable[WorkoutLike], new_exercises: list[dict[str, Any]]
 ) -> list[PersonalRecord]:
