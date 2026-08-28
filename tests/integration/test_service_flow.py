@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import pytest
 from PIL import Image
 
 from fitness_coach.coach.factory import ServiceFactory
+from fitness_coach.coach.openai_client import OpenAIResult
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
@@ -169,6 +171,56 @@ def test_prompt_builder_includes_dynamic_context(factory: ServiceFactory) -> Non
 
     assert "# Fitness Accountability Coach" in prompt
     assert "# Dynamic SQLite Context" in prompt
+    assert "# Knowledge Base" in prompt
+
+
+def test_known_citation_urls_parses_source_lines(tmp_path: Path) -> None:
+    for name in PromptBuilder.REQUIRED_FILES:
+        (tmp_path / name).write_text("placeholder", encoding="utf-8")
+    (tmp_path / "knowledge_base.md").write_text(
+        "## Progressive Overload\n\nSource: NSCA Essentials of Strength Training "
+        "and Conditioning — https://www.nsca.com/example.\n",
+        encoding="utf-8",
+    )
+    builder = PromptBuilder(tmp_path)
+    assert builder.known_citation_urls() == {"https://www.nsca.com/example"}
+
+
+class _StubOpenAI:
+    """Minimal stand-in for CoachOpenAIClient, swapped onto CoachService.openai."""
+
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    def respond(self, *, system_prompt: str, user_message: str) -> OpenAIResult:
+        return OpenAIResult(text=self._text, metadata={"model": "stub"})
+
+
+def test_answer_question_flags_unverified_citation_url(
+    factory: ServiceFactory, caplog: pytest.LogCaptureFixture
+) -> None:
+    with factory.session() as session, caplog.at_level(logging.WARNING):
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.openai = _StubOpenAI(
+            "Alternate push/pull movements — see https://example-not-real.test/study."
+        )
+        response = coach.answer_question(user.id, "Why alternate push and pull exercises?")
+
+    assert response.metadata["unverified_citation_urls"] == [
+        "https://example-not-real.test/study"
+    ]
+    assert "unverified" in caplog.text.lower()
+
+
+def test_answer_question_does_not_flag_when_no_url_cited(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.openai = _StubOpenAI("Alternate push and pull movements to avoid pre-fatigue.")
+        response = coach.answer_question(user.id, "Why alternate push and pull exercises?")
+
+    assert "unverified_citation_urls" not in response.metadata
 
 
 def test_analytics_lock_blocks_cumulative_requests(factory: ServiceFactory) -> None:

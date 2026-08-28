@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -35,6 +36,10 @@ from fitness_coach.database.schemas import (
     WorkoutLog,
 )
 from fitness_coach.vision.processor import ImageKind, VisionExtraction
+
+logger = logging.getLogger(__name__)
+
+_RESPONSE_URL_PATTERN = re.compile(r"https?://\S+")
 
 
 class AnalyticsLockedError(PermissionError):
@@ -248,7 +253,26 @@ class CoachService:
             )
         prompt = self.prompt_builder.build(user_id)
         result = self.openai.respond(system_prompt=prompt, user_message=message)
-        return CoachResponse(message=result.text, metadata=result.metadata)
+        metadata = dict(result.metadata)
+        unverified = self._unverified_citation_urls(result.text)
+        if unverified:
+            logger.warning("Coach response cited unverified URL(s): %s", unverified)
+            metadata["unverified_citation_urls"] = unverified
+        return CoachResponse(message=result.text, metadata=metadata)
+
+    def _unverified_citation_urls(self, text: str) -> list[str]:
+        """Flag response URLs absent from knowledge_base.md.
+
+        A deterministic, no-extra-LLM-call backstop against hallucinated citations -
+        not a complete detector, since a fabricated claim with no URL attached (a fake
+        author or statistic) isn't caught here. That's the prompt instruction's job
+        (see the Knowledge Base section of system_prompt.md).
+        """
+
+        cited = {url.rstrip(").,;") for url in _RESPONSE_URL_PATTERN.findall(text)}
+        if not cited:
+            return []
+        return sorted(cited - self.prompt_builder.known_citation_urls())
 
     def store_vision_extraction(
         self,

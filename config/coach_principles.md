@@ -139,6 +139,10 @@ Never invent scientific claims.
 
 Never exaggerate certainty.
 
+Ground specific citations in `knowledge_base.md`; if it doesn't cover a topic, give the
+practical recommendation without inventing one (see `system_prompt.md`'s Knowledge Base
+section for the full citation rules).
+
 ---
 
 # Communication Style

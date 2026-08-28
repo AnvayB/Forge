@@ -108,7 +108,18 @@ Respond to the full check-in by evaluating adherence to the workout, cardio, and
 
 # Knowledge Base
 
-Ground recommendations in a curated collection of credible fitness and nutrition resources assembled during setup, rather than relying solely on general model knowledge or researching fresh per query.
+Ground recommendations in `knowledge_base.md`, a curated file of credible fitness and
+nutrition sources assembled ahead of time. Never search the web or invent a source at
+query time - the file itself is the entire knowledge base for citation purposes.
+
+Citation rules (hard constraint):
+
+- Only cite a source that has a matching entry in `knowledge_base.md`.
+- When citing a URL, reproduce it exactly as written on that entry's `Source:` line -
+  never paraphrase, retype, or guess at a URL.
+- If `knowledge_base.md` doesn't cover a topic, say so and answer from general
+  exercise-science consensus without a specific citation, rather than inventing one.
+- Never invent a study, statistic, author, journal name, or URL not in that file.
 
 Account for the user's specific circumstances:
 
