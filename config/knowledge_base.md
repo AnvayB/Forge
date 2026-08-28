@@ -1,10 +1,11 @@
 # Knowledge Base
 
 Curated, science-backed references for grounding coaching recommendations - exercise
-order, progressive overload, variety/deload cadence, rep ranges, and working around the
-user's shoulder/knee discomfort. This is the entire citation source for the coach: see
-the "Knowledge Base" section of `system_prompt.md` for the citation rules (only cite an
-entry that exists below, reproduce its `Source:` line exactly, never invent one).
+order, progressive overload, variety/deload cadence, range of motion, proximity to
+failure, training frequency, and working around the user's shoulder/knee discomfort.
+This is the entire citation source for the coach: see the "Knowledge Base" section of
+`system_prompt.md` for the citation rules (only cite an entry that exists below,
+reproduce its `Source:` line exactly, never invent one).
 
 To add a new entry: append a `##` heading with a short topic name, 1-3 sentences of
 plain-language explanation, and a `Source:` line with the attribution and a real,
@@ -68,23 +69,80 @@ randomized within subject design." Scientific Reports, 2026 — https://www.natu
 
 ---
 
-## Hypertrophy Rep Ranges, Proximity to Failure & Technique
+## Exercise Technique & Tempo
 
-A repetition tempo of roughly 2-8 seconds and a range of motion emphasizing time under
-tension at long muscle lengths both support hypertrophy; spending more time in the
-lengthened portion of a lift can match or exceed full-range-of-motion training for
-muscle growth in some cases. This favors controlled, technically sound reps over rushed
-ones, and supports partial-range-at-long-length variations as a legitimate tool, not
-just "cheating the range of motion."
+A repetition tempo of roughly 2-8 seconds generally supports hypertrophy without a
+strong preference for any specific speed within that window; rushing reps (very fast,
+low control) is not necessary and can compromise technique. Controlled, technically
+sound reps - full control of the weight rather than momentum or speed - are the
+baseline recommendation across rep ranges.
 
 Source: Androulakis Korakakis P, Wolf M, Coleman M, Burke R, Piñero A, Nippard J,
 Schoenfeld BJ. "Optimizing Resistance Training Technique to Maximize Muscle Hypertrophy:
 A Narrative Review." Journal of Functional Morphology and Kinesiology, 2024;9(1):9 — https://pubmed.ncbi.nlm.nih.gov/38249086/
 
+---
+
+## Range of Motion: Full vs. Partial
+
+Full range of motion tends to outperform partial range of motion for hypertrophy and
+strength, though a newer, larger meta-analysis found the difference to be trivial to
+small rather than large - full ROM is the safer default, but partial ROM isn't
+"wasted" training. The nuance: partial reps performed specifically at the *long* muscle
+length (the stretched end of the range, e.g. the bottom of a curl or a deep lunge)
+appear to produce similar hypertrophy to full ROM, while partials at the *short* muscle
+length (the contracted end) are the weaker option - so when a joint limits full ROM,
+favor training the lengthened portion of the movement over the shortened portion.
+
+Source: Pallarés JG, Hernández-Belmonte A, Martínez-Cava A, Vetrovsky T, Steffl M,
+Courel-Ibáñez J. "Effects of range of motion on resistance training adaptations: A
+systematic review and meta-analysis." Scandinavian Journal of Medicine & Science in
+Sports, 2021;31(10):1866-1881 — https://onlinelibrary.wiley.com/doi/10.1111/sms.14006
+
+Source: Wolf M, Androulakis-Korakakis P, Fisher J, Schoenfeld B, Steele J. "Partial vs
+full range of motion resistance training: a systematic review and meta-analysis."
+International Journal of Strength and Conditioning, 2023;3(1) — https://journal.iusca.org/index.php/Journal/article/view/182
+
 Source: Wolf M, Androulakis Korakakis P, Piñero A, Mohan AE, Hermann T, Augustin F,
 Sapuppo M, Lin B, Coleman M, Burke R, Nippard J, Swinton PA, Schoenfeld BJ. "Lengthened
 partial repetitions elicit similar muscular adaptations as full range of motion
 repetitions during resistance training in trained individuals." PeerJ, 2025;13:e18904 — https://pubmed.ncbi.nlm.nih.gov/39959841/
+
+---
+
+## Proximity to Failure & Training to Failure
+
+Training to momentary muscular failure is not clearly superior to stopping a few reps
+short of it (reps in reserve, RIR) for hypertrophy - the relationship between proximity
+to failure and muscle growth appears non-linear, with closer-to-failure training
+helping up to a point but the benefit flattening out past roughly 2 RIR, and diminishing
+returns (or added fatigue cost with little extra growth) beyond that. Practically,
+training in the 0-4 RIR range produces comparable hypertrophy in most controlled trials
+and is more sustainable across a full week of volume than grinding every set to failure.
+
+Source: Refalo MC, Helms ER, Trexler ET, Hamilton DL, Fyfe JJ. "The influence of
+resistance training proximity-to-failure on skeletal muscle hypertrophy: A systematic
+review and meta-analysis." Sports Medicine, 2022 — https://pubmed.ncbi.nlm.nih.gov/36334240/
+
+Source: "Exploring the Dose-Response Relationship Between Estimated Resistance Training
+Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of
+Meta-Regressions." 2024 — https://pubmed.ncbi.nlm.nih.gov/38970765/
+
+---
+
+## Training Frequency
+
+When weekly training volume (total sets) is held equal, how that volume is split across
+sessions per week doesn't meaningfully change hypertrophy outcomes - training a muscle
+group once versus three times a week produces similar growth if total sets match.
+Higher frequency is still practically useful as a way to fit more total volume into a
+week without single sessions becoming too long, rather than being a growth driver on
+its own.
+
+Source: Schoenfeld BJ, Grgic J, Krieger JW. "How many times per week should a muscle be
+trained to maximize muscle hypertrophy? A systematic review and meta-analysis of
+studies examining the effects of resistance training frequency." Journal of Sports
+Sciences, 2018;37(11):1286-1295 — https://pubmed.ncbi.nlm.nih.gov/30558493/
 
 ---
 
