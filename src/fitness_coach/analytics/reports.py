@@ -9,6 +9,7 @@ from typing import Any
 
 from fitness_coach.analytics.adherence import completion_rate, current_streak, unique_event_dates
 from fitness_coach.analytics.cardio import CardioLike, summarize_cardio
+from fitness_coach.analytics.measurements import MeasurementLike, summarize_measurements
 from fitness_coach.analytics.nutrition import (
     NutritionLike,
     average_nutrition,
@@ -23,6 +24,7 @@ def build_progress_metrics(
     workouts: Iterable[WorkoutLike],
     cardio_events: Iterable[CardioLike],
     nutrition_events: Iterable[NutritionLike],
+    measurements: Iterable[MeasurementLike],
     start: datetime,
     end: datetime,
     today: date,
@@ -33,6 +35,7 @@ def build_progress_metrics(
     workout_list = list(workouts)
     cardio_list = list(cardio_events)
     nutrition_list = list(nutrition_events)
+    measurement_list = list(measurements)
     active_dates = unique_event_dates([*workout_list, *cardio_list])
     nutrition_averages = average_nutrition(nutrition_list, start, end)
 
@@ -58,4 +61,5 @@ def build_progress_metrics(
             ),
             "missing_days": missing_nutrition_days(nutrition_list, start, end),
         },
+        "measurements": asdict(summarize_measurements(measurement_list)),
     }

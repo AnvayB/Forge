@@ -19,6 +19,7 @@ from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.settings import get_app_settings, get_coach_settings
 from fitness_coach.database.repositories import (
     CardioEventRepository,
+    MeasurementEventRepository,
     NutritionEventRepository,
     SleepEventRepository,
     WorkoutEventRepository,
@@ -313,10 +314,12 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             workouts = WorkoutEventRepository(session).between(user.id, start, now)
             cardio = CardioEventRepository(session).between(user.id, start, now)
             nutrition = NutritionEventRepository(session).between(user.id, start, now)
+            measurements = MeasurementEventRepository(session).between(user.id, start, now)
             metrics = build_progress_metrics(
                 workouts=workouts,
                 cardio_events=cardio,
                 nutrition_events=nutrition,
+                measurements=measurements,
                 start=start,
                 end=now,
                 today=now.date(),

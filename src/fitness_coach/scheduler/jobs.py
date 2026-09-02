@@ -16,6 +16,7 @@ from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import CoachService
 from fitness_coach.database.repositories import (
     CardioEventRepository,
+    MeasurementEventRepository,
     NutritionEventRepository,
     UserRepository,
     WorkoutEventRepository,
@@ -125,10 +126,12 @@ def run_progress_review(factory: ServiceFactory) -> None:
         workouts = WorkoutEventRepository(session).between(user.id, start, now)
         cardio = CardioEventRepository(session).between(user.id, start, now)
         nutrition = NutritionEventRepository(session).between(user.id, start, now)
+        measurements = MeasurementEventRepository(session).between(user.id, start, now)
         metrics = build_progress_metrics(
             workouts=workouts,
             cardio_events=cardio,
             nutrition_events=nutrition,
+            measurements=measurements,
             start=start,
             end=now,
             today=now.date(),

@@ -9,6 +9,7 @@ from hypothesis import strategies as st
 
 from fitness_coach.analytics.adherence import completion_rate, current_streak, missed_days
 from fitness_coach.analytics.cardio import summarize_cardio
+from fitness_coach.analytics.measurements import summarize_measurements
 from fitness_coach.analytics.nutrition import (
     average_nutrition,
     missing_nutrition_days,
@@ -47,6 +48,15 @@ class NutritionFixture:
     protein_g: float
     carbs_g: float
     fat_g: float
+
+
+@dataclass
+class MeasurementFixture:
+    measured_at: datetime
+    body_weight_lb: float | None = None
+    waist_inches: float | None = None
+    body_fat_percent: float | None = None
+    progress_photo_path: str | None = None
 
 
 def dt(year: int, month: int, day: int) -> datetime:
@@ -201,11 +211,33 @@ def test_next_tracked_weight_increments_on_match_and_resets_on_change() -> None:
     assert (tracked, streak) == (135, 1)
 
 
+def test_summarize_measurements_uses_first_and_last_logged_value() -> None:
+    events = [
+        MeasurementFixture(dt(2026, 7, 1), body_weight_lb=180, progress_photo_path="a.jpg"),
+        MeasurementFixture(dt(2026, 7, 15), waist_inches=34),
+        MeasurementFixture(dt(2026, 7, 30), body_weight_lb=178, progress_photo_path="b.jpg"),
+    ]
+    summary = summarize_measurements(events)
+    assert summary.entries_logged == 3
+    assert summary.photos_logged == 2
+    assert summary.body_weight_lb is not None
+    assert summary.body_weight_lb.first_value == 180
+    assert summary.body_weight_lb.last_value == 178
+    assert summary.body_weight_lb.change == -2
+    # Only one waist entry logged - not enough for a trend.
+    assert summary.waist_inches is None
+    assert summary.body_fat_percent is None
+
+
 def test_progress_metrics_are_deterministic() -> None:
     metrics = build_progress_metrics(
         workouts=[WorkoutFixture(dt(2026, 7, 1), exercises=[])],
         cardio_events=[CardioFixture(dt(2026, 7, 2), 20)],
         nutrition_events=[NutritionFixture(dt(2026, 7, 1), 2000, 150, 200, 70)],
+        measurements=[
+            MeasurementFixture(dt(2026, 7, 1), body_weight_lb=180),
+            MeasurementFixture(dt(2026, 7, 3), body_weight_lb=179),
+        ],
         start=dt(2026, 7, 1),
         end=dt(2026, 7, 3),
         today=date(2026, 7, 3),
@@ -214,6 +246,7 @@ def test_progress_metrics_are_deterministic() -> None:
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["cardio"]["total_minutes"] == 20
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
+    assert metrics["measurements"]["body_weight_lb"]["change"] == -1
 
 
 @given(st.lists(st.dates(min_value=date(2020, 1, 1), max_value=date(2020, 1, 31))))
