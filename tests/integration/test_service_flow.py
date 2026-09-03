@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import pytest
 from PIL import Image
 
 from fitness_coach.coach.factory import ServiceFactory
+from fitness_coach.coach.openai_client import OpenAIResult
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
@@ -98,6 +100,62 @@ def test_log_workout_congratulates_new_personal_record(factory: ServiceFactory) 
     assert "up from 12lbs x20" in second.message
 
 
+def test_workout_baseline_status_is_judged_and_promotes_after_five_sessions(
+    factory: ServiceFactory,
+) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.set_exercise_baseline(user.id, "Bench Press", 135, 185)
+
+        def log(day: int, weight: float) -> str:
+            response = coach.log_workout(
+                user.id,
+                WorkoutLog(
+                    occurred_at=datetime(2026, 7, day, tzinfo=UTC),
+                    workout_type="Push",
+                    exercises=[
+                        {"name": "Bench Press", "sets": [{"weight": weight, "reps": 8}]}
+                    ],
+                ),
+            )
+            return response.message
+
+        assert "Status: Bench Press — Good" in log(1, 135)
+        assert "Status: Bench Press — Under" in log(2, 125)
+        assert "Status: Bench Press — Over" in log(3, 150)
+
+        # 5 consecutive sessions at 145 promotes the baseline to 145.
+        for day in range(4, 8):
+            assert "Baseline updated" not in log(day, 145)
+        promoted_message = log(8, 145)
+        assert "Baseline updated: Bench Press is now 145lbs" in promoted_message
+
+        baselines = coach.list_exercise_baselines(user.id)
+    assert len(baselines) == 1
+    assert baselines[0].baseline_weight == 145
+
+
+def test_set_exercise_baseline_overwrite_resets_streak(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.set_exercise_baseline(user.id, "Squat", 135)
+        coach.log_workout(
+            user.id,
+            WorkoutLog(
+                occurred_at=datetime(2026, 7, 1, tzinfo=UTC),
+                workout_type="Legs",
+                exercises=[{"name": "Squat", "sets": [{"weight": 145, "reps": 5}]}],
+            ),
+        )
+        coach.set_exercise_baseline(user.id, "Squat", 145)
+        baselines = coach.list_exercise_baselines(user.id)
+    assert baselines[0].baseline_weight == 145
+    assert baselines[0].tracked_weight is None
+    assert baselines[0].consecutive_sessions_at_tracked_weight == 0
+
+
 def test_service_logs_sleep(factory: ServiceFactory) -> None:
     with factory.session() as session:
         coach = factory.coach_service(session)
@@ -169,6 +227,56 @@ def test_prompt_builder_includes_dynamic_context(factory: ServiceFactory) -> Non
 
     assert "# Fitness Accountability Coach" in prompt
     assert "# Dynamic SQLite Context" in prompt
+    assert "# Knowledge Base" in prompt
+
+
+def test_known_citation_urls_parses_source_lines(tmp_path: Path) -> None:
+    for name in PromptBuilder.REQUIRED_FILES:
+        (tmp_path / name).write_text("placeholder", encoding="utf-8")
+    (tmp_path / "knowledge_base.md").write_text(
+        "## Progressive Overload\n\nSource: NSCA Essentials of Strength Training "
+        "and Conditioning — https://www.nsca.com/example.\n",
+        encoding="utf-8",
+    )
+    builder = PromptBuilder(tmp_path)
+    assert builder.known_citation_urls() == {"https://www.nsca.com/example"}
+
+
+class _StubOpenAI:
+    """Minimal stand-in for CoachOpenAIClient, swapped onto CoachService.openai."""
+
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    def respond(self, *, system_prompt: str, user_message: str) -> OpenAIResult:
+        return OpenAIResult(text=self._text, metadata={"model": "stub"})
+
+
+def test_answer_question_flags_unverified_citation_url(
+    factory: ServiceFactory, caplog: pytest.LogCaptureFixture
+) -> None:
+    with factory.session() as session, caplog.at_level(logging.WARNING):
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.openai = _StubOpenAI(
+            "Alternate push/pull movements — see https://example-not-real.test/study."
+        )
+        response = coach.answer_question(user.id, "Why alternate push and pull exercises?")
+
+    assert response.metadata["unverified_citation_urls"] == [
+        "https://example-not-real.test/study"
+    ]
+    assert "unverified" in caplog.text.lower()
+
+
+def test_answer_question_does_not_flag_when_no_url_cited(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        coach.openai = _StubOpenAI("Alternate push and pull movements to avoid pre-fatigue.")
+        response = coach.answer_question(user.id, "Why alternate push and pull exercises?")
+
+    assert "unverified_citation_urls" not in response.metadata
 
 
 def test_analytics_lock_blocks_cumulative_requests(factory: ServiceFactory) -> None:

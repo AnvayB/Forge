@@ -312,3 +312,68 @@ class CoachNoteRepository(Repository[models.CoachNote]):
             models.CoachNote.active.is_(True),
         )
         return list(self.session.scalars(stmt))
+
+
+def _normalize_exercise_name(name: str) -> str:
+    return name.strip().lower()
+
+
+class ExerciseBaselineRepository(Repository[models.ExerciseBaseline]):
+    """Repository for per-exercise baseline/max weight tracking."""
+
+    model = models.ExerciseBaseline
+
+    def get_for_exercise(self, user_id: str, exercise_name: str) -> models.ExerciseBaseline | None:
+        stmt = select(models.ExerciseBaseline).where(
+            models.ExerciseBaseline.user_id == user_id,
+            models.ExerciseBaseline.exercise_name == _normalize_exercise_name(exercise_name),
+        )
+        return self.session.scalars(stmt).first()
+
+    def upsert_baseline(
+        self,
+        *,
+        user_id: str,
+        exercise_name: str,
+        baseline_weight: float,
+        max_weight: float | None = None,
+    ) -> models.ExerciseBaseline:
+        """Set (or overwrite) a baseline. Overwriting resets streak tracking."""
+
+        baseline = self.get_for_exercise(user_id, exercise_name)
+        if baseline is None:
+            baseline = models.ExerciseBaseline(
+                user_id=user_id,
+                exercise_name=_normalize_exercise_name(exercise_name),
+                display_name=exercise_name.strip(),
+                baseline_weight=baseline_weight,
+                max_weight=max_weight,
+            )
+            return self.add(baseline)
+
+        baseline.display_name = exercise_name.strip()
+        baseline.baseline_weight = baseline_weight
+        baseline.max_weight = max_weight
+        baseline.tracked_weight = None
+        baseline.consecutive_sessions_at_tracked_weight = 0
+        baseline.updated_at = datetime.now(UTC)
+        self.session.flush()
+        return baseline
+
+    def update_tracking(
+        self,
+        baseline_id: str,
+        *,
+        tracked_weight: float,
+        consecutive_sessions: int,
+        baseline_weight: float,
+    ) -> models.ExerciseBaseline:
+        baseline = self.session.get(models.ExerciseBaseline, baseline_id)
+        if baseline is None:
+            raise ValueError(f"Unknown exercise baseline: {baseline_id}")
+        baseline.tracked_weight = tracked_weight
+        baseline.consecutive_sessions_at_tracked_weight = consecutive_sessions
+        baseline.baseline_weight = baseline_weight
+        baseline.updated_at = datetime.now(UTC)
+        self.session.flush()
+        return baseline

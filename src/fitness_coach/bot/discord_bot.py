@@ -19,6 +19,7 @@ from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.settings import get_app_settings, get_coach_settings
 from fitness_coach.database.repositories import (
     CardioEventRepository,
+    MeasurementEventRepository,
     NutritionEventRepository,
     SleepEventRepository,
     WorkoutEventRepository,
@@ -243,6 +244,50 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             )
         await ctx.reply(response.message)
 
+    @bot.command(name="setbaseline")
+    async def setbaseline(
+        ctx: commands.Context[commands.Bot], weight: str, *, exercise: str
+    ) -> None:
+        """Set the baseline (and optionally max) weight the coach judges logged sets against.
+
+        Use `!setbaseline 135 Bench Press` for baseline only, or `!setbaseline 135/185
+        Bench Press` for baseline/max. Overwriting an existing baseline restarts streak
+        tracking toward the next auto-promotion.
+        """
+
+        baseline_weight, max_weight = _parse_baseline_weight(weight)
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            response = coach.set_exercise_baseline(user.id, exercise, baseline_weight, max_weight)
+        await ctx.reply(response.message)
+
+    @bot.command(name="baselines")
+    async def baselines(ctx: commands.Context[commands.Bot]) -> None:
+        """List your configured exercise baselines."""
+
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            rows = coach.list_exercise_baselines(user.id)
+        if not rows:
+            await ctx.reply(
+                "No exercise baselines set yet. Use `!setbaseline 135 Bench Press` to add one."
+            )
+            return
+        lines = ["**Exercise Baselines**"]
+        for row in sorted(rows, key=lambda r: r.display_name.lower()):
+            line = f"- {row.display_name}: {row.baseline_weight:g}lbs"
+            if row.max_weight is not None:
+                line += f" (max {row.max_weight:g}lbs)"
+            if row.consecutive_sessions_at_tracked_weight:
+                line += (
+                    f" — {row.consecutive_sessions_at_tracked_weight}/5 sessions "
+                    "toward next update"
+                )
+            lines.append(line)
+        await ctx.reply("\n".join(lines))
+
     @bot.command(name="progress")
     async def progress(ctx: commands.Context[commands.Bot]) -> None:
         """Deliver the periodic progress review, on its configured cadence only.
@@ -269,10 +314,12 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             workouts = WorkoutEventRepository(session).between(user.id, start, now)
             cardio = CardioEventRepository(session).between(user.id, start, now)
             nutrition = NutritionEventRepository(session).between(user.id, start, now)
+            measurements = MeasurementEventRepository(session).between(user.id, start, now)
             metrics = build_progress_metrics(
                 workouts=workouts,
                 cardio_events=cardio,
                 nutrition_events=nutrition,
+                measurements=measurements,
                 start=start,
                 end=now,
                 today=now.date(),
@@ -520,6 +567,26 @@ def _parse_macro_value(raw: str) -> float:
             "without units (e.g. `188`, `188g`, `877cals`)."
         )
     return float(match.group())
+
+
+def _parse_baseline_weight(raw: str) -> tuple[float, float | None]:
+    """Parse "<baseline>" or "<baseline>/<max>" (e.g. "135" or "135/185")."""
+
+    parts = raw.strip().split("/")
+    if len(parts) not in (1, 2):
+        raise commands.BadArgument(
+            f'Could not parse "{raw.strip()}" as a weight. Use `135` or `135/185` '
+            "(baseline/max)."
+        )
+    try:
+        baseline_weight = float(parts[0])
+        max_weight = float(parts[1]) if len(parts) == 2 else None
+    except ValueError as error:
+        raise commands.BadArgument(
+            f'Could not parse "{raw.strip()}" as a weight. Use `135` or `135/185` '
+            "(baseline/max)."
+        ) from error
+    return baseline_weight, max_weight
 
 
 def _format_recent_section(

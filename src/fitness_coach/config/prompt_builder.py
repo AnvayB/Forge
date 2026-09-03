@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Protocol
+
+_URL_PATTERN = re.compile(r"https?://\S+")
 
 
 class ContextProvider(Protocol):
@@ -20,6 +23,7 @@ class PromptBuilder:
     REQUIRED_FILES = (
         "system_prompt.md",
         "coach_principles.md",
+        "knowledge_base.md",
         "user_profile.md",
         "training_preferences.md",
     )
@@ -35,6 +39,16 @@ class PromptBuilder:
         context = self.context_provider.build_context(user_id) if self.context_provider else {}
         sections.append(self._format_dynamic_context(context))
         return "\n\n---\n\n".join(sections)
+
+    def known_citation_urls(self) -> set[str]:
+        """Whitelist of citation URLs from the curated knowledge base.
+
+        Local file parse only, no network call - used as a deterministic backstop to
+        flag any URL the LLM cites that isn't actually in the curated source list.
+        """
+
+        text = self._load_prompt_file("knowledge_base.md")
+        return {url.rstrip(").,;") for url in _URL_PATTERN.findall(text)}
 
     def _load_prompt_file(self, file_name: str) -> str:
         path = self.config_dir / file_name
