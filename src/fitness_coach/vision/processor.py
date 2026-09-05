@@ -55,9 +55,15 @@ _AUTO_DETECT_TASK = (
     "- sleep_screenshot: `time_asleep_minutes`, `bedtime`, `wake_time`, "
     "`time_awake_minutes`, `light_minutes`, `deep_minutes`, `rem_minutes`, "
     "`regularity_percent`, `sleep_latency_minutes`, `wake_up_mood`.\n"
-    "- progress_photo: a physique/body photo with no readable stats on it; leave `facts` "
-    "empty unless a scale or measurement is visible (`body_weight_lb`, `waist_inches`, "
-    "`body_fat_percent`).\n"
+    "- progress_photo: a physique/body photo. Put a short, honest, constructive "
+    "observation about visible physique (e.g. midsection/stomach fat, overall build) "
+    "into `facts.feedback` - specific and checkable, never vague praise, hype, or "
+    "derision. There is no previous photo available here, so treat this as a "
+    "standalone baseline; don't invent a comparison. Never state a specific body-fat "
+    "percentage, weight, or waist measurement unless a scale or tape measure is "
+    "visible and readable in the frame - if one is, also put it in `body_weight_lb`, "
+    "`waist_inches`, or `body_fat_percent`. Set `needs_clarification` to false and "
+    "confidence to at least 0.8 as long as a person's body is clearly visible.\n"
     "If confidence is low, or you cannot tell what kind this is, set needs_clarification "
     "to true."
 )
@@ -153,6 +159,115 @@ class VisionProcessor:
                 tmp_path.unlink(missing_ok=True)
             else:
                 self._delete_if_configured(tmp_path)
+
+    def process_progress_photo(
+        self,
+        *,
+        user_id: str,
+        source_path: Path,
+        previous_photo_path: str | None = None,
+        previous_measured_at: datetime | None = None,
+    ) -> VisionExtraction:
+        """Analyze a progress photo, comparing it against the previous one when available.
+
+        Bypasses `_analyze()` - its per-kind blocks only append field guidance onto one
+        shared "extract structured facts" preamble, with no clean seam for dual-image
+        ordering and date-substitution (same precedent as `process_workout_text`,
+        which also builds its own task text directly).
+        """
+
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_path = self._copy_to_temp(source_path)
+        retained_path: Path | None = None
+        try:
+            self._validate_image(tmp_path)
+            if self.settings.retain_progress_photos:
+                retained_path = self._retain_progress_photo(tmp_path)
+
+            previous = Path(previous_photo_path) if previous_photo_path else None
+            if previous is not None and previous_measured_at is not None and previous.exists():
+                image_paths = [previous, tmp_path]
+                task = self._progress_photo_comparison_task(previous_measured_at)
+            else:
+                image_paths = [tmp_path]
+                task = self._progress_photo_baseline_task()
+
+            prompt = self.prompt_builder.build(user_id)
+            result = self.openai.analyze_images(
+                system_prompt=prompt,
+                image_paths=image_paths,
+                task=task,
+            )
+            extraction = self._parse_extraction_result(result)
+            return VisionExtraction(
+                kind=ImageKind.PROGRESS_PHOTO,
+                confidence=extraction.get("confidence", 0.0),
+                needs_clarification=extraction.get("needs_clarification", True),
+                facts=extraction.get("facts", {}),
+                retained_path=str(retained_path) if retained_path else None,
+            )
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+    def _progress_photo_comparison_task(self, previous_measured_at: datetime) -> str:
+        day_gap = (datetime.now(UTC).date() - previous_measured_at.date()).days
+        return (
+            "The user sent a new progress/physique photo. You are also given their most "
+            "recent previous progress photo for comparison: the FIRST attached image is "
+            f"the previous photo (taken {previous_measured_at.date().isoformat()}), and "
+            "the SECOND is the new one (taken today, "
+            f"{datetime.now(UTC).date().isoformat()}) - {day_gap} day(s) apart. Return "
+            "JSON with keys `confidence`, `needs_clarification`, and `facts`.\n\n"
+            "Compare the two photos and write a short, honest, constructive comment into "
+            "`facts.feedback` about visible physique changes (e.g. midsection/stomach "
+            "fat, shoulders/chest/arms, overall build and posture) - or genuine lack of "
+            "visible change, if that's what you actually see. Rules:\n"
+            "- Never state a specific body-fat percentage, weight, or waist measurement "
+            "unless a scale or tape measure is visible and readable in the frame; if one "
+            "is, also put the reading in `body_weight_lb`, `waist_inches`, or "
+            "`body_fat_percent`.\n"
+            "- Be specific and checkable (\"midsection looks slightly leaner through the "
+            "waist\" not \"looking great!\"). No vague praise, no hype, no derision - be "
+            "direct and honest, the way a coach who respects the person tells them the "
+            "truth.\n"
+            "- If lighting, angle, distance, or pose differ enough that a fair visual "
+            "comparison isn't really possible, say so plainly instead of guessing, and "
+            "describe what you can still tell from the new photo alone.\n"
+            f"- Mention the {day_gap}-day gap when it's relevant to interpreting what you "
+            "see (a long gap with little visible change is itself worth naming "
+            "honestly).\n"
+            "- If you note something moving in an unwanted direction, pair it with one "
+            "concrete, actionable next step - never leave a criticism without a path "
+            "forward.\n"
+            "- Set `needs_clarification` to false and `confidence` to at least 0.8 as "
+            "long as you can clearly see a person's body in both photos, even if you end "
+            "up declining or heavily qualifying the comparison - a qualified or declined "
+            "comparison is still a complete, useful answer. Only set "
+            "`needs_clarification` to true if the image(s) don't actually show a person "
+            "clearly enough to say anything (too dark, too cropped, or not a physique "
+            "photo at all)."
+        )
+
+    def _progress_photo_baseline_task(self) -> str:
+        return (
+            "The user sent a progress/physique photo. No previous progress photo is "
+            "available to compare it against yet. Return JSON with keys `confidence`, "
+            "`needs_clarification`, and `facts`.\n\n"
+            "Write a short, honest, constructive observation into `facts.feedback` about "
+            "what's visible (e.g. midsection/stomach fat, shoulders/chest/arms, overall "
+            "build and posture), framed as a baseline - do not invent a comparison that "
+            "doesn't exist. Rules:\n"
+            "- Never state a specific body-fat percentage, weight, or waist measurement "
+            "unless a scale or tape measure is visible and readable in the frame; if one "
+            "is, also put the reading in `body_weight_lb`, `waist_inches`, or "
+            "`body_fat_percent`.\n"
+            "- Be specific and checkable, not vague praise or hype, and never derisive.\n"
+            "- Mention this is a starting point for future comparison, not a verdict.\n"
+            "- Set `needs_clarification` to false and `confidence` to at least 0.8 as "
+            "long as you can clearly see a person's body in the photo. Only set "
+            "`needs_clarification` to true if the image doesn't actually show a person "
+            "clearly enough to say anything."
+        )
 
     def process_workout_screenshots(
         self, *, user_id: str, source_paths: list[Path], extra_notes: str = ""

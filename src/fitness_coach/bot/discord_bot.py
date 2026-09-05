@@ -442,6 +442,16 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                             extraction = processor.process_auto(
                                 user_id=user.id, source_path=incoming_path
                             )
+                        elif kind == ImageKind.PROGRESS_PHOTO:
+                            previous = coach.measurements.latest_with_photo_for_user(user.id)
+                            extraction = processor.process_progress_photo(
+                                user_id=user.id,
+                                source_path=incoming_path,
+                                previous_photo_path=(
+                                    previous.progress_photo_path if previous else None
+                                ),
+                                previous_measured_at=previous.measured_at if previous else None,
+                            )
                         else:
                             extraction = processor.process(
                                 user_id=user.id,

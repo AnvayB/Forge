@@ -12,8 +12,10 @@ from fitness_coach.coach.openai_client import OpenAIResult
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import AppSettings, CoachSettings
+from fitness_coach.database import models
 from fitness_coach.database.repositories import (
     CardioEventRepository,
+    MeasurementEventRepository,
     NutritionEventRepository,
     SleepEventRepository,
     WorkoutEventRepository,
@@ -305,6 +307,95 @@ def test_vision_processor_deletes_temp_screenshot(
     tmp_files = list((tmp_path / "uploads" / "tmp").glob("*"))
     assert extraction.needs_clarification is True
     assert tmp_files == []
+
+
+def test_measurement_repository_latest_with_photo_excludes_photoless(
+    factory: ServiceFactory,
+) -> None:
+    with factory.session() as session:
+        user = factory.coach_service(session).get_user("123")
+        repo = MeasurementEventRepository(session)
+        older_with_photo = repo.add(
+            models.MeasurementEvent(
+                user_id=user.id,
+                measured_at=datetime(2026, 2, 1, tzinfo=UTC),
+                progress_photo_path="uploads/progress/2026-02-01/old.png",
+            )
+        )
+        # Newer, but no photo - must not be returned in place of the older one that has one.
+        repo.add(
+            models.MeasurementEvent(
+                user_id=user.id,
+                measured_at=datetime(2026, 3, 1, tzinfo=UTC),
+                progress_photo_path=None,
+            )
+        )
+        latest = repo.latest_with_photo_for_user(user.id)
+
+    assert latest is not None
+    assert latest.id == older_with_photo.id
+
+
+def test_process_progress_photo_without_previous_photo(
+    factory: ServiceFactory, tmp_path: Path
+) -> None:
+    image_path = tmp_path / "physique.png"
+    Image.new("RGB", (10, 10), color="white").save(image_path)
+
+    with factory.session() as session:
+        user = factory.coach_service(session).get_user("123")
+        processor = factory.vision_processor(session)
+        extraction = processor.process_progress_photo(user_id=user.id, source_path=image_path)
+
+    assert extraction.kind == ImageKind.PROGRESS_PHOTO
+    assert extraction.retained_path is not None
+    assert Path(extraction.retained_path).exists()
+    assert list((tmp_path / "uploads" / "tmp").glob("*")) == []
+
+
+def test_process_progress_photo_preserves_previous_photo(
+    factory: ServiceFactory, tmp_path: Path
+) -> None:
+    previous_path = tmp_path / "previous_progress.png"
+    Image.new("RGB", (10, 10), color="blue").save(previous_path)
+    previous_bytes = previous_path.read_bytes()
+
+    new_image_path = tmp_path / "new_progress.png"
+    Image.new("RGB", (10, 10), color="red").save(new_image_path)
+
+    with factory.session() as session:
+        user = factory.coach_service(session).get_user("123")
+        processor = factory.vision_processor(session)
+        extraction = processor.process_progress_photo(
+            user_id=user.id,
+            source_path=new_image_path,
+            previous_photo_path=str(previous_path),
+            previous_measured_at=datetime(2026, 7, 1, tzinfo=UTC),
+        )
+
+    # Critical invariant: the previous photo is someone else's permanent file.
+    assert previous_path.exists()
+    assert previous_path.read_bytes() == previous_bytes
+    assert extraction.retained_path is not None
+    assert Path(extraction.retained_path) != previous_path
+    assert list((tmp_path / "uploads" / "tmp").glob("*")) == []
+
+
+def test_progress_photo_extraction_surfaces_feedback_message(factory: ServiceFactory) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.PROGRESS_PHOTO,
+        confidence=0.9,
+        needs_clarification=False,
+        facts={"feedback": "Midsection looks slightly leaner through the waist since last time."},
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+
+    assert response.metadata["event_type"] == "measurement_recorded"
+    assert response.message == "Midsection looks slightly leaner through the waist since last time."
 
 
 def test_cardio_screenshot_extraction_stores_structured_cardio(factory: ServiceFactory) -> None:
