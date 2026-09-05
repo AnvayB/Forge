@@ -362,6 +362,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                 end=now,
                 today=now.date(),
                 protein_goal_g=factory.coach_settings.protein_goal_g,
+                protein_adherence_threshold_g=factory.coach_settings.protein_adherence_threshold_g,
             )
             review = coach.maybe_generate_review(user.id, metrics, now)
         if review is None:

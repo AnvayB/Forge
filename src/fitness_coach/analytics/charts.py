@@ -114,6 +114,8 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
         adherence_items.append(("Activity completion", adherence["activity_completion_rate"] * 100))
     if "protein_goal_adherence" in nutrition:
         adherence_items.append(("Protein goal met", nutrition["protein_goal_adherence"] * 100))
+    if "protein_adherence_rate" in nutrition:
+        adherence_items.append(("Protein adherence", nutrition["protein_adherence_rate"] * 100))
     if adherence_items:
         adherence_items.reverse()
         path = output_dir / "adherence.png"
