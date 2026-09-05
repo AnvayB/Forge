@@ -16,13 +16,33 @@ class WorkoutLike(Protocol):
     exercises: list[dict[str, Any]]
 
 
-def exercise_volume(exercise: dict[str, Any]) -> float:
-    """Return estimated volume as sets * reps * weight when all values exist."""
+def _to_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
-    sets = float(exercise.get("sets") or 0)
-    reps = float(exercise.get("reps") or exercise.get("target_reps") or 0)
-    weight = float(exercise.get("weight") or exercise.get("weight_lb") or 0)
-    return sets * reps * weight
+
+def exercise_volume(exercise: dict[str, Any]) -> float:
+    """Return estimated volume (sum of weight * reps across sets).
+
+    Exercises are usually stored with `sets` as a list of {"weight", "reps"} objects
+    (the shape the vision-extraction pipeline and PR detection use) - handled by
+    summing weight * reps per set, since weight/reps can vary per set. A flatter
+    shape with `sets` as a plain count and a single `weight`/`reps` value for the
+    whole exercise is also tolerated.
+    """
+
+    sets = exercise.get("sets")
+    if isinstance(sets, list):
+        return sum(
+            _to_float(exercise_set.get("weight")) * _to_float(exercise_set.get("reps"))
+            for exercise_set in sets
+        )
+    set_count = _to_float(sets)
+    reps = _to_float(exercise.get("reps") or exercise.get("target_reps"))
+    weight = _to_float(exercise.get("weight") or exercise.get("weight_lb"))
+    return set_count * reps * weight
 
 
 def total_workout_volume(workout: WorkoutLike) -> float:
@@ -43,13 +63,17 @@ def volume_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, float]:
 
 
 def best_weight_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, float]:
-    """Return best recorded weight by exercise."""
+    """Return best recorded weight by exercise (see `exercise_volume` for shape handling)."""
 
     best: dict[str, float] = {}
     for workout in workouts:
         for exercise in workout.exercises:
             name = str(exercise.get("name", "unknown")).lower()
-            weight = float(exercise.get("weight") or exercise.get("weight_lb") or 0)
+            sets = exercise.get("sets")
+            if isinstance(sets, list):
+                weight = max((_to_float(s.get("weight")) for s in sets), default=0.0)
+            else:
+                weight = _to_float(exercise.get("weight") or exercise.get("weight_lb"))
             best[name] = max(best.get(name, 0.0), weight)
     return best
 
@@ -80,13 +104,6 @@ def _one_rep_max_estimate(weight: float, reps: float) -> float:
     if reps <= 1:
         return weight
     return weight * (1 + reps / 30)
-
-
-def _to_float(value: Any) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 def best_set_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, tuple[float, float]]:

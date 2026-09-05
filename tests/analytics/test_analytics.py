@@ -124,6 +124,26 @@ def test_strength_volume_and_best_weight() -> None:
     assert best_weight_by_exercise([workout]) == {"incline bench press": 145}
 
 
+def test_strength_volume_and_best_weight_handles_nested_sets_shape() -> None:
+    # This is the shape real workouts are actually logged in (vision extraction and
+    # PR detection both use it) - sets is a list of {"weight", "reps"} objects, not a
+    # plain count. Regression test: this used to raise TypeError (float() argument
+    # must be a string or a real number, not 'list') as soon as any real workout
+    # history reached exercise_volume/best_weight_by_exercise, which only happens
+    # once a 30-day progress review actually fires.
+    workout = WorkoutFixture(
+        dt(2026, 7, 1),
+        exercises=[
+            {
+                "name": "Bench Press",
+                "sets": [{"weight": 135, "reps": 8}, {"weight": 135, "reps": 8}],
+            }
+        ],
+    )
+    assert total_workout_volume(workout) == 2160
+    assert best_weight_by_exercise([workout]) == {"bench press": 135}
+
+
 def test_find_new_personal_records_requires_prior_history() -> None:
     history = [
         WorkoutFixture(
@@ -230,8 +250,17 @@ def test_summarize_measurements_uses_first_and_last_logged_value() -> None:
 
 
 def test_progress_metrics_are_deterministic() -> None:
+    # Exercises use the real nested-sets shape (not an empty list) so this also
+    # regression-tests build_progress_metrics -> volume_by_exercise against the
+    # shape real logged workouts actually have - see
+    # test_strength_volume_and_best_weight_handles_nested_sets_shape.
     metrics = build_progress_metrics(
-        workouts=[WorkoutFixture(dt(2026, 7, 1), exercises=[])],
+        workouts=[
+            WorkoutFixture(
+                dt(2026, 7, 1),
+                exercises=[{"name": "Bench Press", "sets": [{"weight": 135, "reps": 8}]}],
+            )
+        ],
         cardio_events=[CardioFixture(dt(2026, 7, 2), 20)],
         nutrition_events=[NutritionFixture(dt(2026, 7, 1), 2000, 150, 200, 70)],
         measurements=[
@@ -244,6 +273,7 @@ def test_progress_metrics_are_deterministic() -> None:
         protein_goal_g=150,
     )
     assert metrics["workouts"]["sessions"] == 1
+    assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
