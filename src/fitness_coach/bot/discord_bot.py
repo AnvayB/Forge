@@ -21,6 +21,7 @@ from fitness_coach.database.repositories import (
     CardioEventRepository,
     MeasurementEventRepository,
     NutritionEventRepository,
+    ProgressReviewRepository,
     SleepEventRepository,
     WorkoutEventRepository,
 )
@@ -360,6 +361,26 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             review = coach.maybe_generate_review(user.id, metrics, now)
         if review is None:
             await ctx.reply("No progress review is available right now.")
+            return
+        await _reply_in_chunks(ctx, review.narrative)
+
+    @bot.command(name="lastreview")
+    async def lastreview(ctx: commands.Context[commands.Bot]) -> None:
+        """Re-deliver the most recently generated progress review, bypassing the cadence lock.
+
+        A review is persisted as soon as it's generated, before its narrative is sent
+        back to Discord - so a delivery failure after generation (e.g. a reply that's
+        too long) can leave a review stuck in the database with no way to see it again,
+        since `!progress` considers the review period already used. This surfaces
+        whatever was last generated, it does not compute anything new.
+        """
+
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            review = ProgressReviewRepository(session).latest_for_user(user.id)
+        if review is None:
+            await ctx.reply("No progress review has been generated yet.")
             return
         await _reply_in_chunks(ctx, review.narrative)
 
