@@ -36,6 +36,38 @@ from fitness_coach.vision.processor import ImageKind
 
 logger = logging.getLogger(__name__)
 
+_DISCORD_MESSAGE_LIMIT = 2000
+
+
+async def _reply_in_chunks(ctx: commands.Context[commands.Bot], text: str) -> None:
+    """Reply with `text`, splitting on line breaks to stay under Discord's message limit.
+
+    An LLM-generated review narrative can exceed 2000 characters, which discord.py
+    rejects outright - splitting keeps `!progress` from crashing on a long review.
+    """
+
+    chunks: list[str] = []
+    chunk = ""
+    for line in text.splitlines(keepends=True):
+        while len(line) > _DISCORD_MESSAGE_LIMIT:
+            if chunk:
+                chunks.append(chunk)
+                chunk = ""
+            chunks.append(line[:_DISCORD_MESSAGE_LIMIT])
+            line = line[_DISCORD_MESSAGE_LIMIT:]
+        if len(chunk) + len(line) > _DISCORD_MESSAGE_LIMIT:
+            chunks.append(chunk)
+            chunk = ""
+        chunk += line
+    if chunk:
+        chunks.append(chunk)
+
+    for index, part in enumerate(chunks):
+        if index == 0:
+            await ctx.reply(part)
+        else:
+            await ctx.send(part)
+
 
 def build_bot(factory: ServiceFactory) -> commands.Bot:
     """Build a Discord bot that delegates business logic to services."""
@@ -329,7 +361,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         if review is None:
             await ctx.reply("No progress review is available right now.")
             return
-        await ctx.reply(review.narrative)
+        await _reply_in_chunks(ctx, review.narrative)
 
     @bot.command(name="recent")
     async def recent(ctx: commands.Context[commands.Bot], count: int = 5) -> None:
