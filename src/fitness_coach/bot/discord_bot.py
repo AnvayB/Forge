@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import discord
 from discord.ext import commands
 
+from fitness_coach.analytics.charts import build_progress_charts
 from fitness_coach.analytics.reports import build_progress_metrics
 from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
@@ -33,11 +34,10 @@ from fitness_coach.database.schemas import (
 )
 from fitness_coach.logging import configure_logging
 from fitness_coach.scheduler.jobs import build_scheduler, build_workout_text
+from fitness_coach.text_chunking import chunk_message
 from fitness_coach.vision.processor import ImageKind
 
 logger = logging.getLogger(__name__)
-
-_DISCORD_MESSAGE_LIMIT = 2000
 
 
 async def _reply_in_chunks(ctx: commands.Context[commands.Bot], text: str) -> None:
@@ -47,27 +47,32 @@ async def _reply_in_chunks(ctx: commands.Context[commands.Bot], text: str) -> No
     rejects outright - splitting keeps `!progress` from crashing on a long review.
     """
 
-    chunks: list[str] = []
-    chunk = ""
-    for line in text.splitlines(keepends=True):
-        while len(line) > _DISCORD_MESSAGE_LIMIT:
-            if chunk:
-                chunks.append(chunk)
-                chunk = ""
-            chunks.append(line[:_DISCORD_MESSAGE_LIMIT])
-            line = line[_DISCORD_MESSAGE_LIMIT:]
-        if len(chunk) + len(line) > _DISCORD_MESSAGE_LIMIT:
-            chunks.append(chunk)
-            chunk = ""
-        chunk += line
-    if chunk:
-        chunks.append(chunk)
-
-    for index, part in enumerate(chunks):
+    for index, part in enumerate(chunk_message(text)):
         if index == 0:
             await ctx.reply(part)
         else:
             await ctx.send(part)
+
+
+async def _send_progress_charts(
+    ctx: commands.Context[commands.Bot], metrics: dict[str, Any], uploads_dir: Path
+) -> None:
+    """Render and attach charts for one review's metrics, deterministically (no LLM).
+
+    Skips sending anything if the metrics have no chartable sections (e.g. an
+    all-empty period).
+    """
+
+    charts_dir = uploads_dir / "tmp" / f"charts_{ctx.message.id}"
+    paths = build_progress_charts(metrics, charts_dir)
+    if not paths:
+        return
+    try:
+        await ctx.send(files=[discord.File(path) for path in paths])
+    finally:
+        for path in paths:
+            path.unlink(missing_ok=True)
+        charts_dir.rmdir()
 
 
 def build_bot(factory: ServiceFactory) -> commands.Bot:
@@ -363,6 +368,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             await ctx.reply("No progress review is available right now.")
             return
         await _reply_in_chunks(ctx, review.narrative)
+        await _send_progress_charts(ctx, review.metrics, factory.app_settings.uploads_dir)
 
     @bot.command(name="lastreview")
     async def lastreview(ctx: commands.Context[commands.Bot]) -> None:
@@ -383,6 +389,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             await ctx.reply("No progress review has been generated yet.")
             return
         await _reply_in_chunks(ctx, review.narrative)
+        await _send_progress_charts(ctx, review.metrics, factory.app_settings.uploads_dir)
 
     @bot.command(name="recent")
     async def recent(ctx: commands.Context[commands.Bot], count: int = 5) -> None:

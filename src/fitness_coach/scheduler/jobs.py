@@ -21,6 +21,7 @@ from fitness_coach.database.repositories import (
     UserRepository,
     WorkoutEventRepository,
 )
+from fitness_coach.text_chunking import chunk_message
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def register_jobs(
     scheduler.add_job(
         run_progress_review,
         CronTrigger(hour=evening_hour, minute=min(59, evening_minute + 5), timezone=timezone),
-        args=[factory],
+        args=[factory, bot],
         id="progress_review",
         replace_existing=True,
     )
@@ -114,13 +115,18 @@ def run_evening_macros_check_in(factory: ServiceFactory, bot: commands.Bot) -> N
     _dispatch_dm(bot, discord_user_id, message)
 
 
-def run_progress_review(factory: ServiceFactory) -> None:
-    """Generate a review if the configured interval has elapsed."""
+def run_progress_review(factory: ServiceFactory, bot: commands.Bot) -> None:
+    """Generate and deliver a review if the configured interval has elapsed.
+
+    Runs daily so the review reaches the user the moment it's due, rather than
+    relying on them to remember to run `!progress` on the right day.
+    """
 
     with factory.session() as session:
         user = UserRepository(session).get_or_create_single_user(
             timezone=factory.coach_settings.timezone
         )
+        discord_user_id = user.discord_user_id
         now = datetime.now(UTC)
         start = now - timedelta(days=factory.coach_settings.review_interval_days)
         workouts = WorkoutEventRepository(session).between(user.id, start, now)
@@ -138,8 +144,13 @@ def run_progress_review(factory: ServiceFactory) -> None:
             protein_goal_g=factory.coach_settings.protein_goal_g,
         )
         review = factory.coach_service(session).maybe_generate_review(user.id, metrics, now)
-        if review:
-            logger.info("progress_review_generated user_id=%s review_id=%s", user.id, review.id)
+    if not review:
+        return
+    logger.info("progress_review_generated user_id=%s review_id=%s", user.id, review.id)
+    if not discord_user_id:
+        logger.warning("progress_review_undelivered_no_discord_user review_id=%s", review.id)
+        return
+    _dispatch_dm_chunks(bot, discord_user_id, review.narrative)
 
 
 def build_scheduler(factory: ServiceFactory, bot: commands.Bot) -> BackgroundScheduler:
@@ -168,3 +179,25 @@ def _dispatch_dm(bot: commands.Bot, discord_user_id: str, message: str) -> None:
         future.result(timeout=30)
     except Exception:
         logger.exception("scheduled_dm_failed discord_user_id=%s", discord_user_id)
+
+
+async def _send_dm_chunks(bot: commands.Bot, discord_user_id: str, text: str) -> None:
+    dm_user = await bot.fetch_user(int(discord_user_id))
+    for part in chunk_message(text):
+        await dm_user.send(part)
+
+
+def _dispatch_dm_chunks(bot: commands.Bot, discord_user_id: str, text: str) -> None:
+    """Send a (possibly multi-message) DM from a non-async APScheduler thread.
+
+    Splits on Discord's 2000-character message limit the same way `!progress` and
+    `!lastreview` do, since this delivers the same LLM-generated review narrative.
+    """
+
+    future = asyncio.run_coroutine_threadsafe(
+        _send_dm_chunks(bot, discord_user_id, text), bot.loop
+    )
+    try:
+        future.result(timeout=30)
+    except Exception:
+        logger.exception("scheduled_review_dm_failed discord_user_id=%s", discord_user_id)
