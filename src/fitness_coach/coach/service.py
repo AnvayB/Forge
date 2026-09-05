@@ -434,7 +434,7 @@ class CoachService:
             )
         )
         return CoachResponse(
-            message="Progress photo retained and measurement event stored.",
+            message=str(facts.get("feedback") or "Progress photo saved."),
             metadata={"event_id": event.id, "event_type": "measurement_recorded"},
         )
 

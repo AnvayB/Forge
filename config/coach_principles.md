@@ -250,6 +250,15 @@ Avoid encouraging frequent measurement outside the configured schedule.
 
 Measurements exist to identify meaningful long-term trends—not daily progress.
 
+When a progress photo is compared against a previous one:
+
+* compare against the user's most recent previous progress photo when one exists
+* state the actual number of days between photos
+* describe specific, checkable visual observations—not an invented body-fat percentage or measurement, unless a scale or tape is actually visible in frame
+* decline or qualify the comparison honestly if angle, lighting, or pose differ too much to compare fairly, rather than guess
+* pair any critical observation with one concrete, constructive next step
+* never use derision—honest and direct, like a coach who respects the person enough to tell them the truth
+
 ---
 
 # Workout Proof

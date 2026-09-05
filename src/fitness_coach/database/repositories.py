@@ -168,6 +168,20 @@ class MeasurementEventRepository(Repository[models.MeasurementEvent]):
         )
         return list(self.session.scalars(stmt))
 
+    def latest_with_photo_for_user(self, user_id: str) -> models.MeasurementEvent | None:
+        """Return the most recent measurement event that has a retained progress photo."""
+
+        stmt = (
+            select(models.MeasurementEvent)
+            .where(
+                models.MeasurementEvent.user_id == user_id,
+                models.MeasurementEvent.progress_photo_path.is_not(None),
+            )
+            .order_by(models.MeasurementEvent.measured_at.desc())
+            .limit(1)
+        )
+        return self.session.scalars(stmt).first()
+
 
 class CommitmentEventRepository(Repository[models.CommitmentEvent]):
     """Repository for accountability commitments."""
