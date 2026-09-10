@@ -262,7 +262,12 @@ def test_progress_metrics_are_deterministic() -> None:
             )
         ],
         cardio_events=[CardioFixture(dt(2026, 7, 2), 20)],
-        nutrition_events=[NutritionFixture(dt(2026, 7, 1), 2000, 150, 200, 70)],
+        nutrition_events=[
+            # Meets both the strict goal (150) and the lower adherence threshold (145).
+            NutritionFixture(dt(2026, 7, 1), 2000, 150, 200, 70),
+            # Meets only the adherence threshold, not the strict goal.
+            NutritionFixture(dt(2026, 7, 2), 2000, 146, 200, 70),
+        ],
         measurements=[
             MeasurementFixture(dt(2026, 7, 1), body_weight_lb=180),
             MeasurementFixture(dt(2026, 7, 3), body_weight_lb=179),
@@ -271,11 +276,13 @@ def test_progress_metrics_are_deterministic() -> None:
         end=dt(2026, 7, 3),
         today=date(2026, 7, 3),
         protein_goal_g=150,
+        protein_adherence_threshold_g=145,
     )
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
+    assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
 
 

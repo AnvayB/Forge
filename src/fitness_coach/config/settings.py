@@ -24,6 +24,7 @@ class CoachSettings(BaseSettings):
     target_checkpoint_date: str = "2026-12-01"
     calorie_goal: int = 2335
     protein_goal_g: int = 160
+    protein_adherence_threshold_g: int = 145
     carbs_goal_g: int = 300
     fat_goal_g: int = 55
     preferred_model: str = "gpt-5.5"

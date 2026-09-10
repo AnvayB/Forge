@@ -29,6 +29,7 @@ def build_progress_metrics(
     end: datetime,
     today: date,
     protein_goal_g: float,
+    protein_adherence_threshold_g: float,
 ) -> dict[str, Any]:
     """Build deterministic review metrics from event data."""
 
@@ -58,6 +59,9 @@ def build_progress_metrics(
             "averages": asdict(nutrition_averages),
             "protein_goal_adherence": protein_goal_adherence(
                 nutrition_list, protein_goal_g, start, end
+            ),
+            "protein_adherence_rate": protein_goal_adherence(
+                nutrition_list, protein_adherence_threshold_g, start, end
             ),
             "missing_days": missing_nutrition_days(nutrition_list, start, end),
         },

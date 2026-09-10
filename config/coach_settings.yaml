@@ -18,6 +18,8 @@ calorie_goal: 2335
 
 protein_goal_g: 160
 
+protein_adherence_threshold_g: 145
+
 carbs_goal_g: 300
 
 fat_goal_g: 55
