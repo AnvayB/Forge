@@ -451,6 +451,13 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         await bot.process_commands(message)
         if message.content.startswith("!"):
             return
+        try:
+            await _handle_free_text_message(message)
+        except Exception:
+            logger.exception("on_message_failed author=%s", message.author.id)
+            await message.reply("Something went wrong processing that message.")
+
+    async def _handle_free_text_message(message: discord.Message) -> None:
         if message.attachments:
             replies: list[str] = []
             logged_sleep = False
