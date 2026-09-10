@@ -61,6 +61,7 @@ class MemoryService:
         baselines = self.exercise_baselines.list_for_user(user_id)
 
         return {
+            "today": {"date": today.isoformat(), "weekday": today.strftime("%A")},
             "memory_facts": {fact.key: fact.value for fact in facts},
             "open_commitments": [
                 {

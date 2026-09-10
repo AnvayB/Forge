@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from PIL import Image
@@ -230,6 +231,20 @@ def test_prompt_builder_includes_dynamic_context(factory: ServiceFactory) -> Non
     assert "# Fitness Accountability Coach" in prompt
     assert "# Dynamic SQLite Context" in prompt
     assert "# Knowledge Base" in prompt
+
+
+def test_dynamic_context_includes_actual_today(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        memory_service = factory.memory_service(session)
+        context = memory_service.build_context(user.id)
+
+    expected_today = datetime.now(ZoneInfo(factory.coach_settings.timezone)).date()
+    assert context["today"] == {
+        "date": expected_today.isoformat(),
+        "weekday": expected_today.strftime("%A"),
+    }
 
 
 def test_known_citation_urls_parses_source_lines(tmp_path: Path) -> None:
