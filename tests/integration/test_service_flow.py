@@ -222,6 +222,49 @@ def test_sleep_screenshot_extraction_without_core_field_asks_for_clarification(
     assert response.metadata["event_type"] == "vision_clarification_required"
 
 
+def test_low_confidence_workout_clarification_lists_extracted_exercises(
+    factory: ServiceFactory,
+) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.WORKOUT_SCREENSHOT,
+        confidence=0.3,
+        needs_clarification=True,
+        facts={
+            "exercises": [
+                {"name": "Seated Shoulder Press Machine"},
+                {"name": "Dumbbell Preacher Curl"},
+            ]
+        },
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+
+    assert response.metadata["event_type"] == "vision_clarification_required"
+    assert "Seated Shoulder Press Machine" in response.message
+    assert "Dumbbell Preacher Curl" in response.message
+
+
+def test_low_confidence_clarification_without_facts_suggests_a_retry(
+    factory: ServiceFactory,
+) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.WORKOUT_SCREENSHOT,
+        confidence=0.1,
+        needs_clarification=True,
+        facts={},
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+
+    assert "couldn't read anything usable" in response.message
+
+
 def test_prompt_builder_includes_dynamic_context(factory: ServiceFactory) -> None:
     with factory.session() as session:
         coach = factory.coach_service(session)

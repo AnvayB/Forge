@@ -298,7 +298,7 @@ class CoachService:
         now = now or datetime.now(UTC)
         if extraction.needs_clarification or extraction.confidence < 0.5:
             return CoachResponse(
-                message="I need a clarification before logging that as proof.",
+                message=_format_clarification_request(extraction.facts),
                 metadata={
                     "event_type": "vision_clarification_required",
                     "confidence": extraction.confidence,
@@ -693,6 +693,39 @@ def _format_baseline_status(exercise: str, verdict: str, near_max: bool) -> str:
 def _format_baseline_promotion(exercise: str, new_baseline_weight: float) -> str:
     weight = _format_number(new_baseline_weight)
     return f"Baseline updated: {exercise} is now {weight}lbs after 5 sessions at that weight."
+
+
+_MAX_CLARIFICATION_EXERCISES = 10
+
+
+def _format_clarification_request(facts: dict[str, Any]) -> str:
+    """Build a clarification message that shows whatever was actually extracted.
+
+    The bare "I need a clarification" message gives no way to tell what went wrong -
+    surfacing the partial facts lets the user see what was read correctly (so they
+    know what's missing/wrong) instead of hitting a dead end.
+    """
+
+    header = "I need a clarification before logging that as proof."
+    exercises = facts.get("exercises")
+    if isinstance(exercises, list) and exercises:
+        names = [
+            str(exercise.get("name", "?")) for exercise in exercises if isinstance(exercise, dict)
+        ]
+        if len(names) > _MAX_CLARIFICATION_EXERCISES:
+            shown = names[:_MAX_CLARIFICATION_EXERCISES]
+            names_text = f"{', '.join(shown)}, and {len(names) - len(shown)} more"
+        else:
+            names_text = ", ".join(names)
+        return f"{header} Here's what I could make out: {names_text}."
+
+    parts = [f"{key}: {value}" for key, value in facts.items() if value not in (None, "", [])]
+    if parts:
+        return f"{header} Here's what I could make out: {'; '.join(parts)}."
+    return (
+        f"{header} I couldn't read anything usable from that - try resending a clearer "
+        "photo, or type it out directly instead."
+    )
 
 
 def _collapse_repeats(values: list[str]) -> list[str]:
