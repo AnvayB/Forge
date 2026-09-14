@@ -1,0 +1,4267 @@
+{
+  "label": "baseline_offline",
+  "commit": "2b45d5e",
+  "generated_at": "2026-09-13T23:51:14.970226+00:00",
+  "mode": "both",
+  "scenario_count": 72,
+  "chat_tools": [
+    "get_recent_events",
+    "get_exercise_history",
+    "get_active_constraints",
+    "get_todays_plan",
+    "get_nutrition_targets",
+    "search_knowledge_base",
+    "flag_for_external_research",
+    "remember_fact",
+    "log_injury"
+  ],
+  "offline": {
+    "scenarios": [
+      {
+        "id": "prog_tonight",
+        "category": "workout_programming",
+        "message": "What should I train tonight?",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {},
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "prog_tonight_p2",
+        "category": "workout_programming",
+        "message": "what's on today",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {},
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "prog_tomorrow",
+        "category": "workout_programming",
+        "message": "Is tomorrow a rest day?",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {},
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "prog_move_day",
+        "category": "workout_programming",
+        "message": "Can I move my leg day to Saturday this week?",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {
+              "weekdays": [
+                "saturday"
+              ]
+            },
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "prog_sets_reps",
+        "category": "workout_programming",
+        "message": "How many sets per muscle group should I be doing each week?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "prog_add_day",
+        "category": "workout_programming",
+        "message": "Should I add a sixth lifting day?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "prog_warmup",
+        "category": "workout_programming",
+        "message": "Do I need to do cardio to warm up before lifting?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "sel_incline_barbell",
+        "category": "exercise_selection",
+        "message": "Should I switch from incline dumbbell press to barbell?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {
+              "exercises": [
+                "incline dumbbell press"
+              ]
+            },
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "sel_second_tricep",
+        "category": "exercise_selection",
+        "message": "What's a good second tricep exercise for someone with elbow issues?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {
+              "body_areas": [
+                "elbow",
+                "tricep"
+              ]
+            },
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "sel_replace_squat",
+        "category": "exercise_selection",
+        "message": "Is leg press a legit replacement for barbell squats?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {
+              "exercises": [
+                "leg press",
+                "squat"
+              ]
+            },
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "sel_drop_shrugs",
+        "category": "exercise_selection",
+        "message": "I want to drop shrugs, is that fine?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {
+              "exercises": [
+                "shrugs"
+              ]
+            },
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "sel_cheat_reps",
+        "category": "exercise_selection",
+        "message": "Is it bad to use a little momentum on lateral raises?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {
+              "exercises": [
+                "lateral raises"
+              ]
+            },
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "plat_bench_5w",
+        "category": "plateaus",
+        "message": "Why has my bench not progressed in 5 weeks?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "progress",
+              "progressed"
+            ],
+            "entities": {
+              "exercises": [
+                "bench"
+              ],
+              "window_days": 35
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_bench_p2",
+        "category": "plateaus",
+        "message": "My bench has been stuck for weeks, why?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "stuck"
+            ],
+            "entities": {
+              "exercises": [
+                "bench"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_bench_p3",
+        "category": "plateaus",
+        "message": "bench press plateau - what's going on with my numbers",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "plateau",
+              "my numbers"
+            ],
+            "entities": {
+              "exercises": [
+                "bench press"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_deload",
+        "category": "plateaus",
+        "message": "Should I deload?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_incline_going_up",
+        "category": "plateaus",
+        "message": "Is my incline dumbbell press actually going up?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "going up"
+            ],
+            "entities": {
+              "exercises": [
+                "incline dumbbell press"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_leg_press",
+        "category": "plateaus",
+        "message": "what did I leg press last time",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "last time",
+              "what did i"
+            ],
+            "entities": {
+              "exercises": [
+                "leg press"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "plat_plateau_generic",
+        "category": "plateaus",
+        "message": "Why do plateaus happen?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "nut_protein",
+        "category": "nutrition",
+        "message": "How much protein should I eat?",
+        "expected_route": "nutrition_targets",
+        "routed": {
+          "decision": {
+            "category": "nutrition_targets",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_nutrition_targets",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "protein",
+              "eat"
+            ],
+            "entities": {},
+            "reason": "asks for a nutrition target; answer from configured goals"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "nut_protein_p2",
+        "category": "nutrition",
+        "message": "what's my protein target",
+        "expected_route": "nutrition_targets",
+        "routed": {
+          "decision": {
+            "category": "nutrition_targets",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_nutrition_targets",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "protein"
+            ],
+            "entities": {},
+            "reason": "asks for a nutrition target; answer from configured goals"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "nut_macros",
+        "category": "nutrition",
+        "message": "What are my macro targets?",
+        "expected_route": "nutrition_targets",
+        "routed": {
+          "decision": {
+            "category": "nutrition_targets",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_nutrition_targets",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "macro"
+            ],
+            "entities": {},
+            "reason": "asks for a nutrition target; answer from configured goals"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "nut_creatine",
+        "category": "nutrition",
+        "message": "Is creatine worth taking?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "nut_yesterday",
+        "category": "nutrition",
+        "message": "What did I eat yesterday?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "nut_average_locked",
+        "category": "nutrition",
+        "message": "What's my average protein intake this month?",
+        "expected_route": "locked_analytics",
+        "routed": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "average",
+              "this month"
+            ],
+            "entities": {},
+            "reason": "cumulative-analytics request; redirected to the progress-review cadence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy keyword gate"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        }
+      },
+      {
+        "id": "nut_meal_timing",
+        "category": "nutrition",
+        "message": "Does protein timing around the workout matter?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "card_change",
+        "category": "cardio",
+        "message": "Should I change my cardio?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "card_today",
+        "category": "cardio",
+        "message": "Am I doing cardio today?",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {},
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "card_last",
+        "category": "cardio",
+        "message": "How did my last cardio session go?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "card_hiit",
+        "category": "cardio",
+        "message": "Is HIIT better than incline walking for fat loss?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "card_interfere",
+        "category": "cardio",
+        "message": "Will cardio on arm day hurt my lifting?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adh_streak",
+        "category": "adherence",
+        "message": "What's my workout streak?",
+        "expected_route": "locked_analytics",
+        "routed": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "streak"
+            ],
+            "entities": {},
+            "reason": "cumulative-analytics request; redirected to the progress-review cadence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy keyword gate"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        }
+      },
+      {
+        "id": "adh_month",
+        "category": "adherence",
+        "message": "How consistent have I been this month?",
+        "expected_route": "locked_analytics",
+        "routed": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "how consistent",
+              "this month"
+            ],
+            "entities": {},
+            "reason": "cumulative-analytics request; redirected to the progress-review cadence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adh_trend",
+        "category": "adherence",
+        "message": "Show me my monthly analytics trend",
+        "expected_route": "locked_analytics",
+        "routed": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "trend",
+              "monthly",
+              "analytics"
+            ],
+            "entities": {},
+            "reason": "cumulative-analytics request; redirected to the progress-review cadence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "locked_analytics",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy keyword gate"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        }
+      },
+      {
+        "id": "adh_this_week",
+        "category": "adherence",
+        "message": "Did I train yesterday?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "adh_missed",
+        "category": "adherence",
+        "message": "I skipped legs today, should I make it up tomorrow?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "adh_commitment",
+        "category": "adherence",
+        "message": "What did I commit to this week?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "hist_last_workout",
+        "category": "historical_context",
+        "message": "What did I do yesterday?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "hist_sleep",
+        "category": "historical_context",
+        "message": "How did I sleep last night?",
+        "expected_route": "recent_activity",
+        "routed": {
+          "decision": {
+            "category": "recent_activity",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_recent_events",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "recent_activity"
+            ],
+            "entities": {},
+            "reason": "asks about recently logged events"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "hist_bench_best",
+        "category": "historical_context",
+        "message": "What's my best bench set?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "my best"
+            ],
+            "entities": {
+              "exercises": [
+                "bench"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "hist_shoulder_press_last",
+        "category": "historical_context",
+        "message": "What weight was I doing on shoulder press last session?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "last session",
+              "what weight"
+            ],
+            "entities": {
+              "exercises": [
+                "shoulder press"
+              ],
+              "body_areas": [
+                "shoulder"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "hist_injury_recall",
+        "category": "historical_context",
+        "message": "Remind me what's going on with my shoulder?",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "recall"
+            ],
+            "entities": {
+              "body_areas": [
+                "shoulder"
+              ],
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "hist_no_history",
+        "category": "historical_context",
+        "message": "How much have I been deadlifting?",
+        "expected_route": "exercise_history",
+        "routed": {
+          "decision": {
+            "category": "exercise_history",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_recent_events",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "how much have i"
+            ],
+            "entities": {
+              "exercises": [
+                "deadlift"
+              ]
+            },
+            "reason": "named exercise plus progress/history language"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "amb_stuck",
+        "category": "ambiguous",
+        "message": "I feel stuck.",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "unclassified personal question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "amb_more",
+        "category": "ambiguous",
+        "message": "Should I be doing more?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "amb_it_better",
+        "category": "ambiguous",
+        "message": "is that better?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "follow_up"
+            ],
+            "entities": {},
+            "reason": "short anaphoric follow-up; resolve against recent conversation"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "amb_thanks",
+        "category": "ambiguous",
+        "message": "thanks!",
+        "expected_route": "conversational",
+        "routed": {
+          "decision": {
+            "category": "conversational",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "conversational"
+            ],
+            "entities": {},
+            "reason": "acknowledgement/greeting"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "amb_ok",
+        "category": "ambiguous",
+        "message": "ok sounds good",
+        "expected_route": "conversational",
+        "routed": {
+          "decision": {
+            "category": "conversational",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "conversational"
+            ],
+            "entities": {},
+            "reason": "acknowledgement/greeting"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "amb_tired",
+        "category": "ambiguous",
+        "message": "I'm tired today",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "unclassified personal question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "evid_failure",
+        "category": "evidence_heavy",
+        "message": "Does training to failure build more muscle?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_rom",
+        "category": "evidence_heavy",
+        "message": "Are partial reps a waste of time?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_frequency",
+        "category": "evidence_heavy",
+        "message": "Is training a muscle twice a week better than once?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {
+              "window_days": 7
+            },
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_tempo",
+        "category": "evidence_heavy",
+        "message": "What does the research say about rep tempo?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_rir_rpe",
+        "category": "evidence_heavy",
+        "message": "What's the difference between RIR and RPE?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_hormones",
+        "category": "evidence_heavy",
+        "message": "Do post-workout testosterone spikes drive muscle growth?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_new_supplement",
+        "category": "evidence_heavy",
+        "message": "What's the evidence on turkesterone?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "evid_one_study",
+        "category": "evidence_heavy",
+        "message": "I saw one study saying stretching between sets doubles growth. Should I do it?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "evid_realistic_gains",
+        "category": "evidence_heavy",
+        "message": "How much muscle can I realistically gain in 3 months?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {
+              "window_days": 90
+            },
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "health_elbow",
+        "category": "health_adjacent",
+        "message": "My elbow hurts when I curl.",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "hurts"
+            ],
+            "entities": {
+              "exercises": [
+                "curl"
+              ],
+              "body_areas": [
+                "elbow"
+              ],
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_elbow_p2",
+        "category": "health_adjacent",
+        "message": "curls have been bothering my elbow lately",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "bothering"
+            ],
+            "entities": {
+              "exercises": [
+                "curls"
+              ],
+              "body_areas": [
+                "elbow"
+              ],
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_shoulder_press",
+        "category": "health_adjacent",
+        "message": "Sharp pain in my shoulder on flat bench yesterday. Keep going?",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "sharp",
+              "pain"
+            ],
+            "entities": {
+              "exercises": [
+                "flat bench"
+              ],
+              "body_areas": [
+                "shoulder"
+              ],
+              "red_flags": [
+                "sharp"
+              ],
+              "severity_hint": "high"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_knee_sore",
+        "category": "health_adjacent",
+        "message": "my knee is sore after leg press, normal?",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "sore"
+            ],
+            "entities": {
+              "exercises": [
+                "leg press"
+              ],
+              "body_areas": [
+                "knee"
+              ],
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_dizzy",
+        "category": "health_adjacent",
+        "message": "I got dizzy and my chest felt tight during cardio today",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "dizzy"
+            ],
+            "entities": {
+              "body_areas": [
+                "chest"
+              ],
+              "red_flags": [
+                "dizzy"
+              ],
+              "severity_hint": "high"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_doms",
+        "category": "health_adjacent",
+        "message": "My quads are really sore two days after legs, is that normal?",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "sore"
+            ],
+            "entities": {
+              "body_areas": [
+                "quad"
+              ],
+              "window_days": 2,
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "health_see_doctor",
+        "category": "health_adjacent",
+        "message": "Should I see a physio about my wrist?",
+        "expected_route": "safety",
+        "routed": {
+          "decision": {
+            "category": "safety",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_active_constraints",
+              "get_exercise_history",
+              "get_recent_events",
+              "search_knowledge_base",
+              "log_injury",
+              "remember_fact"
+            ],
+            "matched_terms": [
+              "medical"
+            ],
+            "entities": {
+              "body_areas": [
+                "wrist"
+              ],
+              "red_flags": [],
+              "severity_hint": "unknown"
+            },
+            "reason": "pain/injury language detected; conservative handling, no external research"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": false
+          }
+        }
+      },
+      {
+        "id": "adv_protein_isolation",
+        "category": "adversarial_isolation",
+        "message": "How much protein should I eat?",
+        "expected_route": "nutrition_targets",
+        "routed": {
+          "decision": {
+            "category": "nutrition_targets",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [
+              "get_nutrition_targets",
+              "search_knowledge_base"
+            ],
+            "matched_terms": [
+              "protein",
+              "eat"
+            ],
+            "entities": {},
+            "reason": "asks for a nutrition target; answer from configured goals"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adv_rir_isolation",
+        "category": "adversarial_isolation",
+        "message": "What's the difference between RIR and RPE?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adv_failure_isolation",
+        "category": "adversarial_isolation",
+        "message": "Should I train to failure?",
+        "expected_route": "judgment",
+        "routed": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": true,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "get_recent_events",
+              "get_exercise_history",
+              "get_active_constraints",
+              "get_todays_plan",
+              "get_nutrition_targets",
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "remember_fact",
+              "log_injury"
+            ],
+            "matched_terms": [
+              "judgment"
+            ],
+            "entities": {},
+            "reason": "coaching judgment/synthesis question; LLM selects evidence via tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "adv_warmup_isolation",
+        "category": "adversarial_isolation",
+        "message": "Why do we do incline before flat bench?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {
+              "exercises": [
+                "flat bench"
+              ]
+            },
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adv_sleep_isolation",
+        "category": "adversarial_isolation",
+        "message": "How many hours of sleep do lifters need?",
+        "expected_route": "knowledge",
+        "routed": {
+          "decision": {
+            "category": "knowledge",
+            "needs_conversation_context": false,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": true,
+            "stable_knowledge": true,
+            "tools": [
+              "search_knowledge_base",
+              "flag_for_external_research",
+              "get_active_constraints"
+            ],
+            "matched_terms": [
+              "knowledge"
+            ],
+            "entities": {},
+            "reason": "general fitness question without personal-history dependence"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": false,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      },
+      {
+        "id": "adv_schedule_isolation",
+        "category": "adversarial_isolation",
+        "message": "Is today a rest day?",
+        "expected_route": "schedule",
+        "routed": {
+          "decision": {
+            "category": "schedule",
+            "needs_conversation_context": true,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [
+              "get_todays_plan",
+              "get_active_constraints",
+              "get_recent_events"
+            ],
+            "matched_terms": [
+              "schedule"
+            ],
+            "entities": {},
+            "reason": "asks what to train / today's plan"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": false,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true
+          }
+        }
+      },
+      {
+        "id": "adv_thanks_isolation",
+        "category": "adversarial_isolation",
+        "message": "cool, thanks",
+        "expected_route": "conversational",
+        "routed": {
+          "decision": {
+            "category": "conversational",
+            "needs_conversation_context": true,
+            "needs_user_history": false,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": false,
+            "tools": [],
+            "matched_terms": [
+              "conversational"
+            ],
+            "entities": {},
+            "reason": "acknowledgement/greeting"
+          },
+          "checks": {
+            "route_correct": true,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": true
+          }
+        },
+        "legacy": {
+          "decision": {
+            "category": "judgment",
+            "needs_conversation_context": false,
+            "needs_user_history": true,
+            "needs_calculations": false,
+            "research_allowed": false,
+            "stable_knowledge": true,
+            "tools": [],
+            "matched_terms": [],
+            "entities": {},
+            "reason": "legacy single-shot: full context dump, no tools"
+          },
+          "checks": {
+            "route_correct": false,
+            "expected_tools_exposed": true,
+            "forbidden_tools_absent": true,
+            "research_necessity": true,
+            "safety_gate": true,
+            "history_isolation": false
+          }
+        }
+      }
+    ],
+    "summary": {
+      "routed": {
+        "expected_tools_exposed": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        },
+        "forbidden_tools_absent": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        },
+        "history_isolation": {
+          "passed": 31,
+          "total": 31,
+          "rate": 1.0
+        },
+        "research_necessity": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        },
+        "route_correct": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        },
+        "safety_gate": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        }
+      },
+      "legacy": {
+        "expected_tools_exposed": {
+          "passed": 8,
+          "total": 72,
+          "rate": 0.111
+        },
+        "forbidden_tools_absent": {
+          "passed": 72,
+          "total": 72,
+          "rate": 1.0
+        },
+        "history_isolation": {
+          "passed": 3,
+          "total": 31,
+          "rate": 0.097
+        },
+        "research_necessity": {
+          "passed": 39,
+          "total": 72,
+          "rate": 0.542
+        },
+        "route_correct": {
+          "passed": 16,
+          "total": 72,
+          "rate": 0.222
+        },
+        "safety_gate": {
+          "passed": 64,
+          "total": 72,
+          "rate": 0.889
+        }
+      },
+      "consistency_routed": {
+        "tonight": true,
+        "bench_plateau": true,
+        "protein_target": true,
+        "elbow_pain": true
+      },
+      "consistency_legacy": {
+        "tonight": true,
+        "bench_plateau": true,
+        "protein_target": true,
+        "elbow_pain": true
+      }
+    }
+  },
+  "online": {
+    "skipped": "OPENAI_API_KEY not set; online evals need a real model."
+  }
+}

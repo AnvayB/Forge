@@ -307,8 +307,12 @@ class _StubOpenAI:
 
     def __init__(self, text: str) -> None:
         self._text = text
+        self.last_prompt = ""
+        self.last_tools: list[dict[str, object]] | None = None
 
-    def respond(self, *, system_prompt: str, user_message: str) -> OpenAIResult:
+    def respond(self, *, system_prompt: str, user_message: str, **kwargs: object) -> OpenAIResult:
+        self.last_prompt = system_prompt
+        self.last_tools = kwargs.get("tools")  # type: ignore[assignment]
         return OpenAIResult(text=self._text, metadata={"model": "stub"})
 
 

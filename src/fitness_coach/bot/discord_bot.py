@@ -33,6 +33,7 @@ from fitness_coach.database.schemas import (
     SleepLog,
 )
 from fitness_coach.logging import configure_logging
+from fitness_coach.routing.classifier import classify_message
 from fitness_coach.scheduler.jobs import build_scheduler, build_workout_text
 from fitness_coach.text_chunking import chunk_message
 from fitness_coach.vision.processor import ImageKind
@@ -443,6 +444,28 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
             ),
         ]
         await ctx.reply("\n\n".join(sections))
+
+    @bot.command(name="route")
+    async def route(ctx: commands.Context[commands.Bot], *, message: str) -> None:
+        """Show how the router would classify a message. Diagnostic only - no model call."""
+
+        decision = classify_message(
+            message, analytics_locked=factory.coach_settings.analytics_locked
+        )
+        tools = ", ".join(decision.tools) if decision.tools else "none"
+        lines = [
+            f"Route: {decision.category.value}",
+            f"Reason: {decision.reason}",
+            f"Tools: {tools}",
+            f"Research allowed: {'yes' if decision.research_allowed else 'no'}",
+            f"Needs history: {'yes' if decision.needs_user_history else 'no'}",
+            f"Needs recent conversation: {'yes' if decision.needs_conversation_context else 'no'}",
+        ]
+        if decision.matched_terms:
+            lines.append(f"Matched: {', '.join(decision.matched_terms)}")
+        if decision.entities:
+            lines.append(f"Entities: {decision.entities}")
+        await ctx.reply("\n".join(lines))
 
     @bot.event
     async def on_message(message: discord.Message) -> None:

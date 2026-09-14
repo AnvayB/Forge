@@ -11,3 +11,4 @@ uploads/tmp/
 uploads/progress/
 build/
 .DS_Store
+data/kb_candidates.jsonl

@@ -11,18 +11,27 @@ and provides periodic reviews on the configured cadence.
 
 - `src/fitness_coach/bot`: thin `discord.py` adapter.
 - `src/fitness_coach/api`: FastAPI health and diagnostics surface.
-- `src/fitness_coach/coach`: orchestration, OpenAI calls, and accountability flows.
+- `src/fitness_coach/routing`: deterministic message router — decides which sources and
+  tools a reply may use before any model call.
+- `src/fitness_coach/coach`: orchestration, OpenAI tool-calling loop, deterministic tools
+  (`tools.py`), short conversation window, and accountability flows.
+- `src/fitness_coach/research`: curated knowledge base parser with evidence tiers, and the
+  bounded external-research engine with deterministic source filtering.
 - `src/fitness_coach/database`: SQLAlchemy models, session setup, and repositories.
 - `src/fitness_coach/memory`: summarized durable memory.
 - `src/fitness_coach/planner`: deterministic workout planning.
 - `src/fitness_coach/analytics`: deterministic analytics from stored events.
 - `src/fitness_coach/vision`: temporary image proof processing and retention policy.
 - `src/fitness_coach/scheduler`: APScheduler jobs for check-ins and reviews.
+- `evals`: response-intelligence eval scenarios, scoring, and baseline reports.
+
+How free-text messages are routed, what the coach can look up, when it researches, and how
+to run the evals: [`docs/intelligence_guide.md`](docs/intelligence_guide.md).
 
 ## Setup
 
 ```bash
-python3.12 -m venv .venv
+python3 -m venv .venv          # Python 3.12+
 source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env
@@ -66,3 +75,13 @@ pytest
 
 Analytics are deterministic Python functions. The LLM only receives already-computed metrics for
 explanation and should never calculate analytics itself.
+
+## Evals
+
+```bash
+python -m evals.run_evals --mode offline            # router checks, no API key
+OPENAI_API_KEY=... python -m evals.run_evals --mode online --path both --judge
+```
+
+The committed baseline is `evals/results/baseline_offline.md`; the offline suite also runs
+under `pytest` and fails on router regressions.
