@@ -35,3 +35,13 @@ nutrition_checkin_required: true
 progress_photo_interval_days: 30
 
 measurement_interval_days: 30
+
+# Response intelligence. External research uses the OpenAI built-in web_search tool with
+# the same API key; it only runs when the router allows it and the curated knowledge base
+# has no coverage, and it is capped at one search per reply.
+external_research_enabled: true
+
+external_research_timeout_seconds: 8.0
+
+# Max function-calling rounds per reply (each round may execute several tools).
+max_tool_rounds: 4

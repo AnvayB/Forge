@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -32,12 +33,18 @@ class PromptBuilder:
         self.config_dir = config_dir
         self.context_provider = context_provider
 
-    def build(self, user_id: str) -> str:
-        """Build the complete system prompt for a user."""
+    def build(self, user_id: str, *, extra_sections: Sequence[str] = ()) -> str:
+        """Build the complete system prompt for a user.
+
+        `extra_sections` are appended after the dynamic context - used for per-request
+        routing guidance and the short conversation window, so the static files stay
+        identical across requests and prompt caching keeps working.
+        """
 
         sections = [self._load_prompt_file(file_name) for file_name in self.REQUIRED_FILES]
         context = self.context_provider.build_context(user_id) if self.context_provider else {}
         sections.append(self._format_dynamic_context(context))
+        sections.extend(section for section in extra_sections if section)
         return "\n\n---\n\n".join(sections)
 
     def known_citation_urls(self) -> set[str]:

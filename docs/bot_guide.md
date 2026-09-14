@@ -24,6 +24,10 @@ These only fire once the bot has captured your Discord user ID — send it at le
 | `!adjust` | `!adjust 2 Shift chest/back to Monday, cardio/rest Tuesday this week` | Logs a short-lived deviation from the default schedule — applies for the given number of days starting today, then the default split resumes automatically. Use this whenever the coach agrees to a schedule change in chat, since it won't otherwise remember |
 | `!progress` | `!progress` | Delivers your periodic progress review, but only once it's actually due (default: every 30 days) — analytics stay locked between review periods by design |
 | `!recent` | `!recent` or `!recent 10` | Lists your last few logged workouts, cardio, nutrition, and sleep entries straight from the database (default 5 each, max 20) — a raw sanity check that logging is working, not an analytics view, so it stays available even while `!progress` is locked |
+| `!setbaseline` | `!setbaseline Bench Press 135 185` | Sets the baseline weight (and optional max) that each logged set of that exercise is judged against |
+| `!baselines` | `!baselines` | Lists your configured baselines |
+| `!lastreview` | `!lastreview` | Re-sends your most recent progress review |
+| `!route` | `!route why is my bench stuck` | Shows how the router classifies a message (route, tools, research allowed) — a diagnostic, nothing is sent to the model |
 
 ## Image uploads
 
@@ -40,6 +44,6 @@ You can attach images directly to `!workout` (multiple screenshots — e.g. Arro
 
 ## Free-text questions
 
-Anything else you type (no `!`, no attachment) goes straight to the coach — e.g. **"what's my workout today?"**, **"what's a good second tricep exercise for elbow issues?"**.
+Anything else you type (no `!`, no attachment) goes through the response router and then to the coach — e.g. **"what's my workout today?"**, **"why has my bench not moved in a month?"**, **"what's a good second tricep exercise for elbow issues?"**. The router decides which of your data the coach may look up for that message and whether it may research; see [`intelligence_guide.md`](intelligence_guide.md). `!route <message>` shows the decision without sending anything to the model.
 
-Note: questions containing analytics-sounding terms (`streak`, `average`, `trend`, `monthly`, `progress report`, `analytics`) are blocked until your next scheduled review — this is intentional, not a bug.
+Note: questions about your cumulative stats (streaks, averages, adherence, monthly trends) are redirected to your next scheduled review — this is intentional. Questions about a single lift ("how's my bench going?") are answered from your logged sets.

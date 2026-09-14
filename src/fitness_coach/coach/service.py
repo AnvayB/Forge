@@ -16,7 +16,9 @@ from fitness_coach.analytics.strength import (
     judge_against_baseline,
     next_tracked_weight,
 )
+from fitness_coach.coach.conversation import ConversationWindow
 from fitness_coach.coach.openai_client import CoachOpenAIClient
+from fitness_coach.coach.tools import CoachToolkit
 from fitness_coach.config.prompt_builder import PromptBuilder
 from fitness_coach.config.settings import CoachSettings
 from fitness_coach.database import models
@@ -43,11 +45,16 @@ from fitness_coach.database.schemas import (
     SleepLog,
     WorkoutLog,
 )
+from fitness_coach.research.engine import EXTERNAL_LABEL
+from fitness_coach.routing.classifier import RouteCategory, RoutingDecision, classify_message
+from fitness_coach.routing.guidance import guidance_for
 from fitness_coach.vision.processor import ImageKind, VisionExtraction
 
 logger = logging.getLogger(__name__)
 
 _RESPONSE_URL_PATTERN = re.compile(r"https?://\S+")
+_EXTERNAL_LABEL_LOOKBACK = 260
+"""How far before a cited URL the external label may appear and still count as labeling it."""
 
 
 class AnalyticsLockedError(PermissionError):
@@ -85,8 +92,12 @@ class CoachService:
         memory: ConversationMemoryRepository,
         plan_overrides: PlanOverrideRepository,
         exercise_baselines: ExerciseBaselineRepository,
+        toolkit: CoachToolkit | None = None,
+        conversation: ConversationWindow | None = None,
     ) -> None:
         self.settings = settings
+        self.toolkit = toolkit
+        self.conversation = conversation
         self.prompt_builder = prompt_builder
         self.openai = openai_client
         self.users = users
@@ -257,35 +268,131 @@ class CoachService:
             metadata={"event_id": event.id, "event_type": "commitment_completed"},
         )
 
-    def answer_question(self, user_id: str, message: str) -> CoachResponse:
-        """Answer lightweight coaching questions using PromptBuilder."""
+    def answer_question(
+        self, user_id: str, message: str, *, use_routing: bool = True
+    ) -> CoachResponse:
+        """Answer a free-text message.
 
+        Routed path (default): a deterministic classifier decides which sources the reply
+        needs and which chat-safe tools to expose; the model fetches only what it needs
+        via function calling; citations are verified against the knowledge base and the
+        URLs actually fetched this turn.
+
+        Legacy path (`use_routing=False`, or no toolkit wired): the pre-routing behavior -
+        keyword analytics gate, full static prompt, single-shot call, no tools. Kept so
+        evals can compare the two on identical scenarios.
+        """
+
+        if not use_routing or self.toolkit is None:
+            return self._answer_legacy(user_id, message)
+
+        decision = self.route_message(message)
+        if decision.category == RouteCategory.LOCKED_ANALYTICS:
+            raise AnalyticsLockedError(self._locked_analytics_message(user_id))
+
+        risk = decision.category == RouteCategory.SAFETY
+        self.toolkit.bind(user_id, research_allowed=decision.research_allowed, risk=risk)
+        injury_record = self._record_pain_report(user_id, decision, message) if risk else None
+
+        prompt = self.build_routed_prompt(user_id, decision)
+        tools = self.toolkit.schemas_for(decision.tools)
+        result = self.openai.respond(
+            system_prompt=prompt,
+            user_message=message,
+            tools=tools or None,
+            tool_executor=self.toolkit.dispatch if tools else None,
+            max_tool_rounds=self.settings.max_tool_rounds,
+        )
+
+        metadata = dict(result.metadata)
+        metadata["route"] = decision.as_dict()
+        metadata["tool_calls"] = [call["name"] for call in self.toolkit.calls]
+        if self.toolkit.research_results:
+            metadata["research"] = [r.as_dict() for r in self.toolkit.research_results]
+        if injury_record:
+            metadata["injury_record"] = injury_record
+        metadata.update(self.citation_report(result.text, external_urls=self.toolkit.external_urls))
+
+        if self.conversation is not None:
+            self.conversation.append(user_id, "user", message)
+            self.conversation.append(user_id, "assistant", result.text)
+        return CoachResponse(message=result.text, metadata=metadata)
+
+    def route_message(self, message: str) -> RoutingDecision:
+        """Expose the deterministic routing decision (used by evals and diagnostics)."""
+
+        return classify_message(message, analytics_locked=self.settings.analytics_locked)
+
+    def build_routed_prompt(self, user_id: str, decision: RoutingDecision) -> str:
+        sections = [guidance_for(decision)]
+        if decision.needs_conversation_context and self.conversation is not None:
+            sections.append(self.conversation.format(user_id))
+        return self.prompt_builder.build(user_id, extra_sections=sections)
+
+    def _answer_legacy(self, user_id: str, message: str) -> CoachResponse:
         if self._asks_for_locked_analytics(message):
-            raise AnalyticsLockedError(
-                "Detailed cumulative analytics are locked until the configured review window."
-            )
+            raise AnalyticsLockedError(self._locked_analytics_message(user_id))
         prompt = self.prompt_builder.build(user_id)
         result = self.openai.respond(system_prompt=prompt, user_message=message)
         metadata = dict(result.metadata)
-        unverified = self._unverified_citation_urls(result.text)
-        if unverified:
-            logger.warning("Coach response cited unverified URL(s): %s", unverified)
-            metadata["unverified_citation_urls"] = unverified
+        metadata["route"] = {"category": "legacy"}
+        metadata.update(self.citation_report(result.text, external_urls=set()))
         return CoachResponse(message=result.text, metadata=metadata)
 
-    def _unverified_citation_urls(self, text: str) -> list[str]:
-        """Flag response URLs absent from knowledge_base.md.
+    def _locked_analytics_message(self, user_id: str) -> str:
+        base = "Detailed cumulative analytics are locked until the configured review window."
+        try:
+            due_at = self.next_review_due_at(user_id)
+        except Exception:  # noqa: BLE001 - message text must never fail the request
+            return base
+        if due_at is None:
+            return f"{base} A progress review is due now - run !progress to generate it."
+        return f"{base} Your next review unlocks on {due_at:%B %d}."
 
-        A deterministic, no-extra-LLM-call backstop against hallucinated citations -
-        not a complete detector, since a fabricated claim with no URL attached (a fake
-        author or statistic) isn't caught here. That's the prompt instruction's job
-        (see the Knowledge Base section of system_prompt.md).
+    def _record_pain_report(
+        self, user_id: str, decision: RoutingDecision, message: str
+    ) -> dict[str, Any] | None:
+        """Deterministically log a pain report so it persists whether or not the model does."""
+
+        if self.toolkit is None:
+            return None
+        areas = decision.entities.get("body_areas") or ["unspecified"]
+        try:
+            return self.toolkit.record_pain_report(str(areas[0]), message)
+        except Exception:  # noqa: BLE001 - never let bookkeeping break the reply
+            logger.exception("pain_report_record_failed")
+            return None
+
+    def citation_report(self, text: str, *, external_urls: set[str]) -> dict[str, list[str]]:
+        """Two-list citation backstop: knowledge-base whitelist plus this turn's fetched URLs.
+
+        - In the knowledge base: fine, unlabeled.
+        - Fetched via research this turn: must carry the external label near the URL.
+        - Neither: unverified (the model cited something it neither had nor fetched).
+
+        Deterministic and LLM-free. A fabricated claim with no URL attached still isn't
+        caught here - that remains the prompt's job.
         """
 
         cited = {url.rstrip(").,;") for url in _RESPONSE_URL_PATTERN.findall(text)}
         if not cited:
-            return []
-        return sorted(cited - self.prompt_builder.known_citation_urls())
+            return {}
+        known = self.prompt_builder.known_citation_urls()
+        report: dict[str, list[str]] = {}
+        unverified = sorted(cited - known - external_urls)
+        if unverified:
+            logger.warning("Coach response cited unverified URL(s): %s", unverified)
+            report["unverified_citation_urls"] = unverified
+        mislabeled = sorted(
+            url for url in cited & external_urls if not _external_label_precedes(text, url)
+        )
+        if mislabeled:
+            logger.warning("External citation(s) missing label: %s", mislabeled)
+            report["mislabeled_external_citations"] = mislabeled
+        labeled = sorted((cited & external_urls) - set(mislabeled))
+        if labeled:
+            report["external_citations"] = labeled
+        return report
 
     def store_vision_extraction(
         self,
@@ -572,11 +679,21 @@ class CoachService:
         return lines
 
     def _asks_for_locked_analytics(self, message: str) -> bool:
+        """Legacy keyword gate. The routed path enforces the lock structurally instead."""
+
         if not self.settings.analytics_locked:
             return False
         lowered = message.lower()
         analytics_terms = ("streak", "average", "trend", "monthly", "progress report", "analytics")
         return any(term in lowered for term in analytics_terms)
+
+
+def _external_label_precedes(text: str, url: str) -> bool:
+    index = text.find(url)
+    if index < 0:
+        return False
+    window = text[max(0, index - _EXTERNAL_LABEL_LOOKBACK) : index]
+    return EXTERNAL_LABEL in window
 
 
 def _optional_int(value: Any) -> int | None:

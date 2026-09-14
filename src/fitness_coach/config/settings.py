@@ -36,6 +36,10 @@ class CoachSettings(BaseSettings):
     retain_processed_screenshots: bool = False
     processed_screenshot_retention_days: int = 0
     retain_progress_photos: bool = True
+    # Response intelligence: routing + bounded tool calling + research escalation.
+    external_research_enabled: bool = True
+    external_research_timeout_seconds: float = 8.0
+    max_tool_rounds: int = 4
 
 
 class AppSettings(BaseSettings):
@@ -48,6 +52,7 @@ class AppSettings(BaseSettings):
     database_url: str = "sqlite:///data/fitness_coach.db"
     config_dir: Path = Field(default=Path("config"))
     uploads_dir: Path = Field(default=Path("uploads"))
+    data_dir: Path = Field(default=Path("data"))
     log_level: str = "INFO"
 
 
