@@ -78,6 +78,31 @@
     factual: "Builds a genuine full-body session (chest, back, delts, legs, and both biceps and tricep work) from the favorite-exercises list rather than repeating one existing day (e.g. Upper) with a leg exercise bolted on."
     personalization: "Uses lighter per-movement volume appropriate for covering the whole body in one session, and respects the exercises-to-avoid list."
 
+- id: prog_push_day
+  category: workout_programming
+  message: "Can we do a push day tomorrow instead of the usual split?"
+  expected_route: schedule
+  expected_tools_any: [get_todays_plan, search_knowledge_base]
+  forbidden_tools: [flag_for_external_research]
+  history_relevant: true
+  research_allowed: false
+  online: {max_words: 200, max_citations: 1}
+  judgment:
+    factual: "Covers chest, shoulders, and triceps with real, balanced volume rather than reusing an existing day."
+
+- id: prog_abs_workout
+  category: workout_programming
+  message: "Give me an abs workout for today"
+  expected_route: schedule
+  expected_tools_any: [get_todays_plan, search_knowledge_base]
+  forbidden_tools: [flag_for_external_research]
+  history_relevant: true
+  research_allowed: false
+  online: {max_words: 200, max_citations: 1}
+  judgment:
+    factual: "Since favorites has no dedicated ab/core work, pulls a well-supported exercise from the knowledge base and says plainly it's a new suggestion rather than an existing favorite."
+    evidence_quality: "Any exercise not from the favorites list is grounded via search_knowledge_base, not invented."
+
 - id: prog_sets_reps
   category: workout_programming
   message: "How many sets per muscle group should I be doing each week?"

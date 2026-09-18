@@ -60,32 +60,47 @@ _GUIDANCE: dict[RouteCategory, str] = {
     RouteCategory.LOCKED_ANALYTICS: "",
 }
 
-# Overrides keyed by `RoutingDecision.entities["requested_split"]`: the user asked for a
-# specific ad-hoc session type instead of whatever the default weekday split says.
-_CUSTOM_SPLIT_GUIDANCE: dict[str, str] = {
-    "full_body": (
-        "The user asked for a full-body session, not their default scheduled split. "
+def _custom_split_guidance(label: str) -> str:
+    """Guidance for an explicit ad-hoc split request (`requested_split` entity).
+
+    Deliberately has no per-split branch or fixed exercise list - which exercises belong
+    in a "push day" vs an "abs workout" is a programming judgment call for the model to
+    make from real training principles and the knowledge base, not a lookup table baked
+    into this file. The router only detected that the user wants a specific, named session
+    instead of their default scheduled split; the content of that session is the model's
+    job, same as any other coaching-judgment reply.
+    """
+
+    readable = label.replace("_", " ")
+    return (
+        f"The user asked for a '{readable}' session, not their default scheduled split. "
         "get_todays_plan only tells you whether it's a rest/cardio day, active overrides, "
         "and the last logged workout - do NOT just recite that day's scheduled exercise "
-        "list, and do not just take one existing day (e.g. 'Upper') and bolt a leg exercise "
-        "onto it. Build a fresh session from the 'Favorite Exercises' list in "
-        "training_preferences.md that actually covers the body: one chest movement, one "
-        "back movement, one shoulder/delt movement, one quad-or-leg-press movement, one "
-        "hamstring movement, and BOTH a bicep and a tricep movement (never an either/or "
-        "for arms). Order compound movements before isolation work. Because one session is "
-        "covering everything, keep volume lighter per movement than a dedicated split day "
-        "(2-3 sets each is enough). Drop anything on 'Exercises to Avoid' or flagged by "
-        "get_active_constraints, and check get_recent_events so you don't stack this on "
-        "top of something already trained hard in the last day or two."
-    ),
-}
+        "list, and do not take one existing day (e.g. 'Upper') and bolt on one extra "
+        "exercise to approximate the request. Design a genuine session for "
+        f"'{readable}': using standard exercise-science program design, work out which "
+        "muscle groups a session with that name is actually expected to train and give "
+        "each of them real, balanced coverage - don't default to whichever exercise is "
+        "easiest to name. If the label is ambiguous or you're not confident what it "
+        "conventionally covers, call search_knowledge_base to check training consensus "
+        "before guessing. Prefer exercises already in the 'Favorite Exercises' list in "
+        "training_preferences.md. Where that list doesn't adequately cover a muscle group "
+        "this session needs, also call search_knowledge_base and bring in a well-supported "
+        "exercise to fill the gap, and say plainly when something is a new suggestion "
+        "rather than an existing favorite - never invent a citation to justify it. Order "
+        "compound movements before isolation work. Keep per-movement volume sensible for "
+        "a single ad-hoc session (lighter than a dedicated split day), and check "
+        "get_recent_events so this doesn't stack on top of the same muscles already "
+        "trained hard in the last day or two. Drop anything on 'Exercises to Avoid' or "
+        "flagged by get_active_constraints."
+    )
 
 
 def guidance_for(decision: RoutingDecision) -> str:
     """Return the routing-guidance prompt section for a decision (may be empty)."""
 
     requested_split = decision.entities.get("requested_split")
-    text = _CUSTOM_SPLIT_GUIDANCE.get(requested_split, "") if requested_split else ""
+    text = _custom_split_guidance(requested_split) if requested_split else ""
     text = text or _GUIDANCE.get(decision.category, "")
     if not text:
         return ""

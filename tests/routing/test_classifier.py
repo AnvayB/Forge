@@ -115,11 +115,56 @@ def test_full_body_request_routes_to_schedule_with_flag() -> None:
     assert decision.category == RouteCategory.SCHEDULE
     assert decision.entities["requested_split"] == "full_body"
     assert TOOL_TODAYS_PLAN in decision.tools
+    assert "search_knowledge_base" in decision.tools
+
+
+@pytest.mark.parametrize(
+    ("message", "label"),
+    [
+        ("Can we do a push day tomorrow?", "push"),
+        ("I want to do a pull workout tonight", "pull"),
+        ("Let's do leg day today", "legs"),
+        ("Can you give me an abs workout?", "core"),
+        ("I want to do a core session today", "core"),
+        ("Give me an arm day routine", "arms"),
+        ("I want to hit a back workout today", "back"),
+    ],
+)
+def test_ad_hoc_split_requests_are_generalized(message: str, label: str) -> None:
+    decision = classify_message(message)
+    assert decision.category == RouteCategory.SCHEDULE
+    assert decision.entities["requested_split"] == label
+    assert "search_knowledge_base" in decision.tools
 
 
 def test_full_body_knowledge_question_is_not_flagged_as_a_request() -> None:
     # Impersonal - no "I"/"my" - so it's a knowledge question, not a session request.
     decision = classify_message("Is full body training as effective as a split?")
+    assert decision.entities.get("requested_split") is None
+
+
+def test_bare_split_word_without_session_context_does_not_misfire() -> None:
+    # "leg" isn't adjacent to a session-context word (day/workout/session/...), so this
+    # is just recent-activity chatter, not a request to design a leg day.
+    decision = classify_message("I did leg extensions and it felt good")
+    assert decision.entities.get("requested_split") is None
+
+
+def test_mentioning_an_existing_split_in_passing_does_not_misfire() -> None:
+    # Names a split but isn't asking one to be designed - a hypothetical (interference
+    # effect) and a past-tense report, respectively.
+    for message in (
+        "Will cardio on arm day hurt my lifting?",
+        "I skipped legs today, should I make it up tomorrow?",
+    ):
+        assert classify_message(message).entities.get("requested_split") is None
+
+
+def test_rescheduling_an_existing_day_does_not_trigger_a_fresh_build() -> None:
+    # "Can I move my leg day" is a reschedule of the existing plan (handled via
+    # !adjust), not a request to design a brand-new leg session from scratch.
+    decision = classify_message("Can I move my leg day to Saturday this week?")
+    assert decision.category == RouteCategory.SCHEDULE
     assert decision.entities.get("requested_split") is None
 
 

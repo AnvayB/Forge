@@ -342,7 +342,97 @@ _NUTRITION_TARGET_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-_FULL_BODY_PATTERN = re.compile(r"\bfull[- ]?body\b|\bwhole[- ]?body\b", re.IGNORECASE)
+# An explicit ad-hoc workout-type request ("full body", "push day", "abs workout", ...)
+# rather than a lookup of the default scheduled split, or a mention of one in passing.
+# A split phrase alone isn't enough to fire this - "will cardio on arm day hurt my
+# lifting" and "I skipped legs today" both name a split but aren't asking for one to be
+# built - so a request verb/phrase (do, let's, want to, give me, build, ...) must appear
+# shortly before the split phrase. The bare split word alone ("back", "push") is never
+# enough on its own either way, so it doesn't misfire on an unrelated sentence.
+_SPLIT_WORDS = (
+    "push",
+    "pull",
+    "upper",
+    "lower",
+    "leg",
+    "legs",
+    "arm",
+    "arms",
+    "back",
+    "chest",
+    "shoulder",
+    "shoulders",
+    "ab",
+    "abs",
+    "core",
+)
+_SPLIT_CONTEXT = r"(?:day|workout|session|routine|training|today|tonight|tomorrow)"
+_SPLIT_WORD_ALT = "|".join(_SPLIT_WORDS)
+_BODY_COMPOUND_PATTERN = re.compile(
+    r"\b(full[- ]?body|whole[- ]?body|upper[- ]?body|lower[- ]?body)\b", re.IGNORECASE
+)
+_SPLIT_CONTEXT_PATTERN = re.compile(
+    rf"\b((?:{_SPLIT_WORD_ALT})\s*[- ]?\s*{_SPLIT_CONTEXT}|"
+    rf"{_SPLIT_CONTEXT}\s*[- ]?\s*(?:of\s+)?(?:{_SPLIT_WORD_ALT}))\b",
+    re.IGNORECASE,
+)
+_SPLIT_PHRASE_ALT = (
+    rf"full[- ]?body|whole[- ]?body|upper[- ]?body|lower[- ]?body|"
+    rf"(?:{_SPLIT_WORD_ALT})\s*[- ]?\s*{_SPLIT_CONTEXT}"
+)
+_BUILD_VERB = r"(?:do|build|design|create|plan|get|have|make)"
+_SPLIT_REQUEST_VERB = (
+    rf"(?:do|doing|build|design|create|program|give me|plan(?:ning)?(?:\s+on)?|hit|hitting|"
+    rf"let'?s(?:\s+do)?|want(?:s|ed)?(?:\s+to)?|wanna|going to|"
+    # "can/could we/I" needs an explicit build verb right after it - otherwise "can I
+    # move my leg day to Saturday" (rescheduling, handled by _SCHEDULE_PATTERN already)
+    # would misfire as a request to design a brand-new leg session.
+    rf"could\s+(?:we|i)\s+{_BUILD_VERB}|can\s+(?:we|i)\s+{_BUILD_VERB})"
+)
+_SPLIT_REQUEST_PATTERN = re.compile(
+    rf"\b{_SPLIT_REQUEST_VERB}\b[^.?!]{{0,20}}\b(?:{_SPLIT_PHRASE_ALT})\b",
+    re.IGNORECASE,
+)
+
+_SPLIT_LABELS: dict[str, str] = {
+    "full body": "full_body",
+    "full-body": "full_body",
+    "fullbody": "full_body",
+    "whole body": "full_body",
+    "whole-body": "full_body",
+    "upper body": "upper",
+    "upper-body": "upper",
+    "lower body": "lower",
+    "lower-body": "lower",
+    "push": "push",
+    "pull": "pull",
+    "upper": "upper",
+    "lower": "lower",
+    "leg": "legs",
+    "legs": "legs",
+    "arm": "arms",
+    "arms": "arms",
+    "back": "back",
+    "chest": "chest",
+    "shoulder": "shoulders",
+    "shoulders": "shoulders",
+    "ab": "core",
+    "abs": "core",
+    "core": "core",
+}
+
+
+def _normalize_split_label(matched_text: str) -> str:
+    """Map matched split phrasing (e.g. 'leg day', 'push workout') to a canonical label."""
+
+    normalized = re.sub(r"[- ]+", " ", matched_text.lower()).strip()
+    if normalized in _SPLIT_LABELS:
+        return _SPLIT_LABELS[normalized]
+    for word in normalized.split():
+        if word in _SPLIT_LABELS:
+            return _SPLIT_LABELS[word]
+    return normalized.replace(" ", "_")
+
 
 _SCHEDULE_PATTERN = re.compile(
     r"\b(what('s| is| should| do)?\s+(i|should i|do i|am i)?\s*(train|lift|workout|work out|do)"
@@ -595,29 +685,41 @@ def classify_message(message: str, *, analytics_locked: bool = True) -> RoutingD
         )
 
     # 5. Schedule / today's plan: weekday -> split lookup plus constraints and overrides.
-    #    A request for an explicit ad-hoc split (e.g. "full body") also routes here, but
-    #    is flagged via `requested_split` so guidance can tell the model not to just echo
-    #    the default weekday split - it needs to build a fresh session instead.
+    #    An explicit ad-hoc split request ("full body", "push day", "abs workout", ...)
+    #    also routes here, flagged via `requested_split` (a free-text label, not a fixed
+    #    enum) so guidance can tell the model to design that session rather than reciting
+    #    the default weekday split. What exercises actually belong in it is left to the
+    #    model plus search_knowledge_base - the router only detects the intent.
     schedule_hit = bool(_SCHEDULE_PATTERN.search(lowered))
-    full_body_hit = bool(_FULL_BODY_PATTERN.search(lowered)) and _mentions_self(lowered)
-    if schedule_hit or full_body_hit:
-        if full_body_hit:
-            entities["requested_split"] = "full_body"
+    split_requested = bool(_SPLIT_REQUEST_PATTERN.search(lowered))
+    split_match = (
+        (_SPLIT_CONTEXT_PATTERN.search(lowered) or _BODY_COMPOUND_PATTERN.search(lowered))
+        if split_requested
+        else None
+    )
+    split_hit = bool(split_match)
+    if schedule_hit or split_hit:
+        tools: tuple[str, ...] = (TOOL_TODAYS_PLAN, TOOL_ACTIVE_CONSTRAINTS, TOOL_RECENT_EVENTS)
+        if split_hit:
+            assert split_match is not None
+            label = _normalize_split_label(split_match.group(0))
+            entities["requested_split"] = label
+            tools = (*tools, TOOL_SEARCH_KB)
         return RoutingDecision(
             category=RouteCategory.SCHEDULE,
             needs_conversation_context=anaphoric,
             needs_user_history=True,
             needs_calculations=False,
             research_allowed=False,
-            stable_knowledge=False,
-            tools=(TOOL_TODAYS_PLAN, TOOL_ACTIVE_CONSTRAINTS, TOOL_RECENT_EVENTS),
-            matched_terms=("schedule",) if schedule_hit else ("full_body",),
+            stable_knowledge=split_hit,
+            tools=tools,
+            matched_terms=("schedule",) if schedule_hit else ("requested_split",),
             entities=entities,
             reason=(
                 "asks what to train / today's plan"
                 if schedule_hit
-                else "explicit full-body workout request; build a fresh session, not the "
-                "default weekday split"
+                else "explicit ad-hoc split request; design a fresh session for it rather "
+                "than the default weekday split"
             ),
         )
 
