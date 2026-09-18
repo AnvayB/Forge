@@ -60,11 +60,33 @@ _GUIDANCE: dict[RouteCategory, str] = {
     RouteCategory.LOCKED_ANALYTICS: "",
 }
 
+# Overrides keyed by `RoutingDecision.entities["requested_split"]`: the user asked for a
+# specific ad-hoc session type instead of whatever the default weekday split says.
+_CUSTOM_SPLIT_GUIDANCE: dict[str, str] = {
+    "full_body": (
+        "The user asked for a full-body session, not their default scheduled split. "
+        "get_todays_plan only tells you whether it's a rest/cardio day, active overrides, "
+        "and the last logged workout - do NOT just recite that day's scheduled exercise "
+        "list, and do not just take one existing day (e.g. 'Upper') and bolt a leg exercise "
+        "onto it. Build a fresh session from the 'Favorite Exercises' list in "
+        "training_preferences.md that actually covers the body: one chest movement, one "
+        "back movement, one shoulder/delt movement, one quad-or-leg-press movement, one "
+        "hamstring movement, and BOTH a bicep and a tricep movement (never an either/or "
+        "for arms). Order compound movements before isolation work. Because one session is "
+        "covering everything, keep volume lighter per movement than a dedicated split day "
+        "(2-3 sets each is enough). Drop anything on 'Exercises to Avoid' or flagged by "
+        "get_active_constraints, and check get_recent_events so you don't stack this on "
+        "top of something already trained hard in the last day or two."
+    ),
+}
+
 
 def guidance_for(decision: RoutingDecision) -> str:
     """Return the routing-guidance prompt section for a decision (may be empty)."""
 
-    text = _GUIDANCE.get(decision.category, "")
+    requested_split = decision.entities.get("requested_split")
+    text = _CUSTOM_SPLIT_GUIDANCE.get(requested_split, "") if requested_split else ""
+    text = text or _GUIDANCE.get(decision.category, "")
     if not text:
         return ""
     header = f"# Routing Guidance (route: {decision.category.value})\n\n"

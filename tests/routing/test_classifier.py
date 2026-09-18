@@ -107,6 +107,22 @@ def test_schedule_route_uses_plan_tool() -> None:
     assert decision.research_allowed is False
 
 
+def test_full_body_request_routes_to_schedule_with_flag() -> None:
+    decision = classify_message(
+        "I want to aim for doing full body tomorrow but might not be able to do "
+        "anything on Sunday because of other plans."
+    )
+    assert decision.category == RouteCategory.SCHEDULE
+    assert decision.entities["requested_split"] == "full_body"
+    assert TOOL_TODAYS_PLAN in decision.tools
+
+
+def test_full_body_knowledge_question_is_not_flagged_as_a_request() -> None:
+    # Impersonal - no "I"/"my" - so it's a knowledge question, not a session request.
+    decision = classify_message("Is full body training as effective as a split?")
+    assert decision.entities.get("requested_split") is None
+
+
 def test_judgment_gets_full_chat_tool_set() -> None:
     decision = classify_message("Should I change my cardio?")
     assert decision.tools == ALL_CHAT_TOOLS

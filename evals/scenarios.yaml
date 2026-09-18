@@ -60,6 +60,24 @@
   judgment:
     actionable: "Ends by telling the user to run !adjust so the change sticks."
 
+- id: prog_full_body
+  category: workout_programming
+  message: "I want to aim for doing full body tomorrow but might not be able to do anything on Sunday because of other plans."
+  expected_route: schedule
+  expected_tools_any: [get_todays_plan, get_active_constraints]
+  forbidden_tools: [flag_for_external_research]
+  history_relevant: true
+  research_allowed: false
+  online:
+    {
+      max_words: 200,
+      max_citations: 0,
+      must_not_mention: ["Chest + Back + Shoulders", "Arms"],
+    }
+  judgment:
+    factual: "Builds a genuine full-body session (chest, back, delts, legs, and both biceps and tricep work) from the favorite-exercises list rather than repeating one existing day (e.g. Upper) with a leg exercise bolted on."
+    personalization: "Uses lighter per-movement volume appropriate for covering the whole body in one session, and respects the exercises-to-avoid list."
+
 - id: prog_sets_reps
   category: workout_programming
   message: "How many sets per muscle group should I be doing each week?"

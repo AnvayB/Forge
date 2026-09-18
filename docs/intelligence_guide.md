@@ -32,7 +32,7 @@ reply needs and which tools the model may call. Priority order:
 | `exercise_history` | a named lift + progress/plateau/history language ("why is my bench stuck") | exercise history, constraints, recent events, knowledge base | no |
 | `locked_analytics` | streaks, averages, adherence, monthly trends about *you* | none — redirected to the review | no |
 | `nutrition_targets` | "how much protein", "my macro targets" | nutrition targets, knowledge base | no |
-| `schedule` | "what should I train tonight", "is tomorrow a rest day", moving a day | today's plan, constraints, recent events | no |
+| `schedule` | "what should I train tonight", "is tomorrow a rest day", moving a day, or an explicit ad-hoc request like "full body" | today's plan, constraints, recent events | no |
 | `recent_activity` | "what did I do yesterday", "how did I sleep", commitments | recent events, constraints (+ exercise history if a lift is named) | no |
 | `conversational` | thanks / ok / hi | none | no |
 | `knowledge` | general questions ("why do we do incline first", "does failure build more muscle") | knowledge base, external research, constraints | allowed |
@@ -121,6 +121,7 @@ Free text (no `!`) goes through the router. Examples and what happens:
 | You type | Route | What the coach does |
 |---|---|---|
 | `What should I train tonight?` | schedule | looks up Tuesday → Chest + Back + Shoulders, applies any `!adjust`, lists the exercises |
+| `I want to do full body tomorrow` | schedule (`requested_split: full_body`) | builds a fresh full-body session from the favorite-exercises list (chest, back, delts, legs, biceps, triceps) instead of reciting whatever day tomorrow's default split says |
 | `Why has my bench not progressed in 5 weeks?` | exercise_history | pulls your bench sessions; reports the real pattern (e.g. 185×5 for four sessions) and one next step |
 | `How much protein should I eat?` | nutrition_targets | answers from your configured 160 g — no history, no lecture |
 | `My elbow hurts when I curl.` | safety | records the report, asks duration/severity or gives a concrete modification; escalates only for recurring/sharp pain |

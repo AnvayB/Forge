@@ -342,6 +342,8 @@ _NUTRITION_TARGET_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+_FULL_BODY_PATTERN = re.compile(r"\bfull[- ]?body\b|\bwhole[- ]?body\b", re.IGNORECASE)
+
 _SCHEDULE_PATTERN = re.compile(
     r"\b(what('s| is| should| do)?\s+(i|should i|do i|am i)?\s*(train|lift|workout|work out|do)"
     r"[^?.!]{0,30}\b(today|tonight|tomorrow|this (morning|afternoon|evening)|on (mon|tues|wednes|"
@@ -593,7 +595,14 @@ def classify_message(message: str, *, analytics_locked: bool = True) -> RoutingD
         )
 
     # 5. Schedule / today's plan: weekday -> split lookup plus constraints and overrides.
-    if _SCHEDULE_PATTERN.search(lowered):
+    #    A request for an explicit ad-hoc split (e.g. "full body") also routes here, but
+    #    is flagged via `requested_split` so guidance can tell the model not to just echo
+    #    the default weekday split - it needs to build a fresh session instead.
+    schedule_hit = bool(_SCHEDULE_PATTERN.search(lowered))
+    full_body_hit = bool(_FULL_BODY_PATTERN.search(lowered)) and _mentions_self(lowered)
+    if schedule_hit or full_body_hit:
+        if full_body_hit:
+            entities["requested_split"] = "full_body"
         return RoutingDecision(
             category=RouteCategory.SCHEDULE,
             needs_conversation_context=anaphoric,
@@ -602,9 +611,14 @@ def classify_message(message: str, *, analytics_locked: bool = True) -> RoutingD
             research_allowed=False,
             stable_knowledge=False,
             tools=(TOOL_TODAYS_PLAN, TOOL_ACTIVE_CONSTRAINTS, TOOL_RECENT_EVENTS),
-            matched_terms=("schedule",),
+            matched_terms=("schedule",) if schedule_hit else ("full_body",),
             entities=entities,
-            reason="asks what to train / today's plan",
+            reason=(
+                "asks what to train / today's plan"
+                if schedule_hit
+                else "explicit full-body workout request; build a fresh session, not the "
+                "default weekday split"
+            ),
         )
 
     # 6. Recent raw activity ("what did I do", "last session"): bounded event lookups.
