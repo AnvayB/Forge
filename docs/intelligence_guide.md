@@ -32,7 +32,7 @@ reply needs and which tools the model may call. Priority order:
 | `exercise_history` | a named lift + progress/plateau/history language ("why is my bench stuck") | exercise history, constraints, recent events, knowledge base | no |
 | `locked_analytics` | streaks, averages, adherence, monthly trends about *you* | none — redirected to the review | no |
 | `nutrition_targets` | "how much protein", "my macro targets" | nutrition targets, knowledge base | no |
-| `schedule` | "what should I train tonight", "is tomorrow a rest day", moving a day | today's plan, constraints, recent events | no |
+| `schedule` | "what should I train tonight", "is tomorrow a rest day", moving a day, or a request to design an ad-hoc session ("full body", "push day", "abs workout", ...) | today's plan, constraints, recent events (+ knowledge base for an ad-hoc request) | no |
 | `recent_activity` | "what did I do yesterday", "how did I sleep", commitments | recent events, constraints (+ exercise history if a lift is named) | no |
 | `conversational` | thanks / ok / hi | none | no |
 | `knowledge` | general questions ("why do we do incline first", "does failure build more muscle") | knowledge base, external research, constraints | allowed |
@@ -121,6 +121,7 @@ Free text (no `!`) goes through the router. Examples and what happens:
 | You type | Route | What the coach does |
 |---|---|---|
 | `What should I train tonight?` | schedule | looks up Tuesday → Chest + Back + Shoulders, applies any `!adjust`, lists the exercises |
+| `I want to do full body tomorrow` / `Can we do a push day?` / `Give me an abs workout` | schedule (`requested_split: full_body` / `push` / `core`) | designs a fresh session for that label - which muscle groups it needs is a model judgment call (real program-design principles, not a hardcoded per-label list), preferring the favorite-exercises list and falling back to `search_knowledge_base` for gaps (e.g. abs/core has no favorites) - instead of reciting whatever the default weekday split says |
 | `Why has my bench not progressed in 5 weeks?` | exercise_history | pulls your bench sessions; reports the real pattern (e.g. 185×5 for four sessions) and one next step |
 | `How much protein should I eat?` | nutrition_targets | answers from your configured 160 g — no history, no lecture |
 | `My elbow hurts when I curl.` | safety | records the report, asks duration/severity or gives a concrete modification; escalates only for recurring/sharp pain |
