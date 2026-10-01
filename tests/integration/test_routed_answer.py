@@ -19,7 +19,7 @@ from fitness_coach.research.engine import EXTERNAL_LABEL
 
 @pytest.fixture
 def factory(tmp_path: Path) -> ServiceFactory:
-    return ServiceFactory(
+    result = ServiceFactory(
         AppSettings(
             database_url=f"sqlite:///{tmp_path / 'coach.db'}",
             config_dir=Path("config"),
@@ -28,6 +28,8 @@ def factory(tmp_path: Path) -> ServiceFactory:
         ),
         CoachSettings(preferred_model="test-model"),
     )
+    yield result
+    result.engine.dispose()
 
 
 class _ToolCallingStub:

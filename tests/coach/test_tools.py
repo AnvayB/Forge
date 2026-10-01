@@ -72,6 +72,7 @@ def toolkit(tmp_path: Path):
     session.flush()
     yield kit, session, user
     session.close()
+    engine.dispose()
 
 
 def test_every_chat_tool_has_a_schema_and_handler(toolkit) -> None:

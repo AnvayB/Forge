@@ -65,15 +65,16 @@ async def _send_progress_charts(
     """
 
     charts_dir = uploads_dir / "tmp" / f"charts_{ctx.message.id}"
-    paths = build_progress_charts(metrics, charts_dir)
-    if not paths:
-        return
+    paths: list[Path] = []
     try:
-        await ctx.send(files=[discord.File(path) for path in paths])
+        paths = build_progress_charts(metrics, charts_dir)
+        if paths:
+            await ctx.send(files=[discord.File(path) for path in paths])
     finally:
         for path in paths:
             path.unlink(missing_ok=True)
-        charts_dir.rmdir()
+        if charts_dir.exists():
+            charts_dir.rmdir()
 
 
 def build_bot(factory: ServiceFactory) -> commands.Bot:
@@ -129,8 +130,8 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         try:
             for attachment in image_attachments:
                 path = incoming_dir / f"discord_{attachment.id}_{attachment.filename}"
-                await attachment.save(path)
                 saved_paths.append(path)
+                await attachment.save(path)
             with factory.session() as session:
                 coach = factory.coach_service(session)
                 processor = factory.vision_processor(session)
@@ -174,8 +175,8 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         try:
             for attachment in image_attachments:
                 path = incoming_dir / f"discord_{attachment.id}_{attachment.filename}"
-                await attachment.save(path)
                 saved_paths.append(path)
+                await attachment.save(path)
             with factory.session() as session:
                 coach = factory.coach_service(session)
                 processor = factory.vision_processor(session)
