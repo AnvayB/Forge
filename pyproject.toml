@@ -41,7 +41,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = "--cov=fitness_coach --cov-report=term-missing"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 line-length = 100

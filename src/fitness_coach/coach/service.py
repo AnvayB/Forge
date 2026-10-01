@@ -146,6 +146,7 @@ class CoachService:
         baseline_lines = self._check_exercise_baselines(user_id, event.exercises)
         if baseline_lines:
             message = f"{message}\n\n" + "\n".join(baseline_lines)
+        message = f"{message}\n\n{_workout_quality_review(event, history)}"
         return CoachResponse(
             message=message,
             metadata={
@@ -437,6 +438,7 @@ class CoachService:
             baseline_lines = self._check_exercise_baselines(user_id, event.exercises)
             if baseline_lines:
                 message = f"{message}\n\n" + "\n".join(baseline_lines)
+            message = f"{message}\n\n{_workout_quality_review(event, history)}"
             return CoachResponse(
                 message=message,
                 metadata={
@@ -758,6 +760,67 @@ def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
         rendered = ", ".join(_collapse_repeats(set_strs))
         lines.append(f"- {name}: {rendered}" if rendered else f"- {name}")
     return "\n".join(lines)
+
+
+def _workout_quality_review(
+    event: models.WorkoutEvent, history: list[models.WorkoutEvent]
+) -> str:
+    """Summarize today's workout using only its sets and existing workout history."""
+
+    def top_performance(exercise: dict[str, Any]) -> float | None:
+        scores = []
+        for item in exercise.get("sets") or []:
+            weight = _optional_float(item.get("weight"))
+            reps = _optional_float(item.get("reps"))
+            if weight and reps and weight > 0 and reps > 0:
+                scores.append(weight * (1 + reps / 30))
+        return max(scores, default=None)
+
+    current = {
+        str(exercise.get("name", "")).strip().casefold(): top_performance(exercise)
+        for exercise in event.exercises
+        if str(exercise.get("name", "")).strip()
+    }
+    comparisons: list[float] = []
+    for name, score in current.items():
+        if score is None:
+            continue
+        prior_scores = [
+            prior_score
+            for workout in history
+            for prior in workout.exercises
+            if str(prior.get("name", "")).strip().casefold() == name
+            and (prior_score := top_performance(prior)) is not None
+        ][:5]
+        if len(prior_scores) >= 2:
+            prior_scores.sort()
+            comparisons.append(score / prior_scores[len(prior_scores) // 2] - 1)
+
+    sets = [
+        item
+        for exercise in event.exercises
+        for item in (exercise.get("sets") or [])
+        if _optional_float(item.get("reps")) and _optional_float(item.get("reps")) > 0
+    ]
+    productive = sum(1 for item in sets if 6 <= _optional_float(item.get("reps")) <= 15)
+    set_count = len(sets)
+    if comparisons:
+        avg_change = sum(comparisons) / len(comparisons)
+        if avg_change >= 0.03:
+            performance = "performance was above your recent baseline"
+        elif avg_change <= -0.03:
+            performance = "performance was a little below your recent baseline"
+        else:
+            performance = "performance held around your recent baseline"
+        if set_count and productive / set_count >= 0.6:
+            return f"{performance.capitalize()}, with most sets in a productive rep range."
+        return f"{performance.capitalize()} across the lifts with enough history to compare."
+
+    if set_count >= 6 and productive / set_count >= 0.5:
+        return "Solid session overall based on the load, reps, and volume logged; most sets fell in a productive rep range."
+    if set_count:
+        return "Solid session overall based on the load, reps, and volume logged."
+    return "Workout logged; there were not enough set details to judge the session quality."
 
 
 def _format_cardio_confirmation(event: models.CardioEvent) -> str:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,7 +28,7 @@ from fitness_coach.vision.processor import ImageKind, VisionExtraction
 
 @pytest.fixture
 def factory(tmp_path: Path) -> ServiceFactory:
-    return ServiceFactory(
+    result = ServiceFactory(
         AppSettings(
             database_url=f"sqlite:///{tmp_path / 'coach.db'}",
             config_dir=Path("config"),
@@ -35,6 +36,8 @@ def factory(tmp_path: Path) -> ServiceFactory:
         ),
         CoachSettings(preferred_model="test-model"),
     )
+    yield result
+    result.engine.dispose()
 
 
 def test_service_logs_structured_events(factory: ServiceFactory) -> None:
@@ -70,6 +73,40 @@ def test_service_logs_structured_events(factory: ServiceFactory) -> None:
     assert nutrition_logs[0].calories == 2100
 
 
+def test_workout_history_survives_commit_and_fresh_session(factory: ServiceFactory) -> None:
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        user_id = user.id
+        coach.log_workout(
+            user_id,
+            WorkoutLog(
+                occurred_at=datetime(2026, 7, 1, tzinfo=UTC),
+                workout_type="Upper",
+                exercises=[{"name": "Bench Press", "sets": [{"weight": 135, "reps": 8}]}],
+            ),
+        )
+
+    with factory.session() as session:
+        persisted = WorkoutEventRepository(session).recent(user_id)
+    assert len(persisted) == 1
+    assert persisted[0].exercises == [
+        {"name": "Bench Press", "sets": [{"weight": 135, "reps": 8}]}
+    ]
+
+
+def test_factory_session_rolls_back_on_failure(factory: ServiceFactory) -> None:
+    with pytest.raises(RuntimeError, match="abort transaction"):
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user("rollback-user")
+            user_id = user.id
+            raise RuntimeError("abort transaction")
+
+    with factory.session() as session:
+        assert session.get(models.User, user_id) is None
+
+
 def test_log_workout_congratulates_new_personal_record(factory: ServiceFactory) -> None:
     with factory.session() as session:
         coach = factory.coach_service(session)
@@ -101,6 +138,93 @@ def test_log_workout_congratulates_new_personal_record(factory: ServiceFactory) 
     assert "New PR" in second.message
     assert "15lbs x20" in second.message
     assert "up from 12lbs x20" in second.message
+
+
+def test_multiple_workout_screenshots_produce_one_event_with_every_exercise(
+    factory: ServiceFactory, tmp_path: Path
+) -> None:
+    image_paths = [tmp_path / "arrow.png", tmp_path / "fitness.png"]
+    for path in image_paths:
+        Image.new("RGB", (8, 8), color="white").save(path)
+
+    class OpenAIStub:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def analyze_images(self, *, system_prompt, image_paths, task):
+            self.calls += 1
+            assert len(image_paths) == 2
+            assert "combine them all into one" in task
+            return OpenAIResult(
+                text=json.dumps(
+                    {
+                        "confidence": 0.95,
+                        "needs_clarification": False,
+                        "facts": {
+                            "workout_type": "Upper",
+                            "duration_minutes": 45,
+                            "exercises": [
+                                {"name": "Bench Press", "sets": [{"weight": 135, "reps": 8}]},
+                                {"name": "Lat Pulldown", "sets": [{"weight": 120, "reps": 10}]},
+                            ],
+                        },
+                    }
+                )
+            )
+
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        processor = factory.vision_processor(session)
+        openai = OpenAIStub()
+        processor.openai = openai  # type: ignore[assignment]
+        extraction = processor.process_workout_screenshots(
+            user_id=user.id, source_paths=image_paths
+        )
+        response = coach.store_vision_extraction(user.id, extraction)
+        events = WorkoutEventRepository(session).recent(user.id)
+
+    assert openai.calls == 1
+    assert response.metadata["event_type"] == "workout_completed"
+    assert len(events) == 1
+    assert [exercise["name"] for exercise in events[0].exercises] == [
+        "Bench Press",
+        "Lat Pulldown",
+    ]
+    assert "135lbs x8" in response.message
+    assert "120lbs x10" in response.message
+    assert list((tmp_path / "uploads" / "tmp").glob("*")) == []
+
+
+def test_workout_confirmation_collapses_identical_sets_and_formats_weight(
+    factory: ServiceFactory,
+) -> None:
+    extraction = VisionExtraction(
+        kind=ImageKind.WORKOUT_SCREENSHOT,
+        confidence=0.95,
+        needs_clarification=False,
+        facts={
+            "workout_type": "Push",
+            "exercises": [
+                {
+                    "name": "Bench Press",
+                    "sets": [
+                        {"weight": 135, "reps": 8},
+                        {"weight": 135, "reps": 8},
+                        {"weight": 135, "reps": 8},
+                    ],
+                }
+            ],
+        },
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("123")
+        response = coach.store_vision_extraction(user.id, extraction)
+
+    assert "135lbs x8 ×3" in response.message
+    assert "lbslbs" not in response.message
 
 
 def test_workout_baseline_status_is_judged_and_promotes_after_five_sessions(

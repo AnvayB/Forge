@@ -73,6 +73,9 @@ All commands are used via Discord DM (or any channel the bot is in), prefixed wi
 pytest
 ```
 
+See [`docs/testing_strategy.md`](docs/testing_strategy.md) for the layered test approach and the
+test-first regression workflow.
+
 Analytics are deterministic Python functions. The LLM only receives already-computed metrics for
 explanation and should never calculate analytics itself.
 

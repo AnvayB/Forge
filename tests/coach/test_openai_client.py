@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 from fitness_coach.coach.openai_client import CoachOpenAIClient
@@ -95,3 +96,56 @@ def test_no_tools_is_single_shot() -> None:
 def test_offline_client_reports_offline() -> None:
     result = CoachOpenAIClient(api_key=None, model="m").respond(system_prompt="s", user_message="u")
     assert result.metadata == {"offline": True}
+
+
+def test_analyze_text_sends_prompt_task_and_user_text() -> None:
+    client, fake = _client([_response("r1", [], text='{"confidence": 1}')])
+
+    result = client.analyze_text(system_prompt="system", task="extract", text="Upper day")
+
+    assert result.text == '{"confidence": 1}'
+    assert fake.calls == [
+        {"model": "m", "instructions": "system", "input": "extract\n\nUpper day"}
+    ]
+
+
+def test_analyze_images_uploads_lowercase_names_and_sends_all_images(tmp_path: Path) -> None:
+    class Files:
+        def __init__(self) -> None:
+            self.uploads: list[tuple[object, str]] = []
+            self.filenames: list[str] = []
+
+        def create(self, *, file: tuple[str, object, str], purpose: str) -> SimpleNamespace:
+            filename, content, media_type = file
+            self.filenames.append(filename)
+            self.uploads.append((content, media_type))
+            assert purpose == "vision"
+            return SimpleNamespace(id=f"file-{len(self.uploads)}")
+
+    client, responses = _client([_response("r1", [], text="ok")])
+    files = Files()
+    client.client.files = files  # type: ignore[attr-defined]
+    first = tmp_path / "IMG_0001.PNG"
+    second = tmp_path / "IMG_0002.JPG"
+    first.write_bytes(b"png data")
+    second.write_bytes(b"jpeg data")
+
+    result = client.analyze_images(
+        system_prompt="system", image_paths=[first, second], task="combine"
+    )
+
+    assert result.text == "ok"
+    assert len(files.uploads) == 2
+    assert files.filenames == ["img_0001.png", "img_0002.jpg"]
+    assert [media_type for _stream, media_type in files.uploads] == ["image/png", "image/jpeg"]
+    assert all(stream.closed for stream, _media_type in files.uploads)
+    assert responses.calls[0]["input"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "combine"},
+                {"type": "input_image", "file_id": "file-1"},
+                {"type": "input_image", "file_id": "file-2"},
+            ],
+        }
+    ]
