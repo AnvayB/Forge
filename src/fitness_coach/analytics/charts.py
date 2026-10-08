@@ -107,6 +107,21 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
         )
         paths.append(path)
 
+    sleep: dict[str, Any] = metrics.get("sleep") or {}
+    mood_counts: dict[str, int] = sleep.get("mood_counts") or {}
+    if mood_counts:
+        items = sorted(mood_counts.items(), key=lambda item: item[1], reverse=True)
+        items.reverse()
+        path = output_dir / "sleep_mood.png"
+        _horizontal_bar_chart(
+            title="Wake-up mood by night",
+            labels=[name.title() for name, _ in items],
+            values=[float(value) for _, value in items],
+            value_format="{:.0f}",
+            path=path,
+        )
+        paths.append(path)
+
     adherence: dict[str, Any] = metrics.get("adherence") or {}
     nutrition: dict[str, Any] = metrics.get("nutrition") or {}
     adherence_items: list[tuple[str, float]] = []
@@ -116,6 +131,8 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
         adherence_items.append(("Protein goal met", nutrition["protein_goal_adherence"] * 100))
     if "protein_adherence_rate" in nutrition:
         adherence_items.append(("Protein adherence", nutrition["protein_adherence_rate"] * 100))
+    if "logging_rate" in sleep:
+        adherence_items.append(("Sleep logged", sleep["logging_rate"] * 100))
     if adherence_items:
         adherence_items.reverse()
         path = output_dir / "adherence.png"

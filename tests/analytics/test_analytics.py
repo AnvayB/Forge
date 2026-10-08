@@ -16,6 +16,7 @@ from fitness_coach.analytics.nutrition import (
     protein_goal_adherence,
 )
 from fitness_coach.analytics.reports import build_progress_metrics
+from fitness_coach.analytics.sleep import summarize_sleep
 from fitness_coach.analytics.strength import (
     best_set_among,
     best_weight_by_exercise,
@@ -57,6 +58,15 @@ class MeasurementFixture:
     waist_inches: float | None = None
     body_fat_percent: float | None = None
     progress_photo_path: str | None = None
+
+
+@dataclass
+class SleepFixture:
+    logged_for: datetime
+    time_asleep_minutes: int | None = None
+    regularity_percent: float | None = None
+    sleep_latency_minutes: int | None = None
+    wake_up_mood: str | None = None
 
 
 def dt(year: int, month: int, day: int) -> datetime:
@@ -249,6 +259,35 @@ def test_summarize_measurements_uses_first_and_last_logged_value() -> None:
     assert summary.body_fat_percent is None
 
 
+def test_summarize_sleep_averages_only_logged_nights() -> None:
+    events = [
+        SleepFixture(
+            dt(2026, 7, 1), time_asleep_minutes=300, regularity_percent=80, wake_up_mood="groggy"
+        ),
+        SleepFixture(
+            dt(2026, 7, 2), time_asleep_minutes=420, regularity_percent=90, wake_up_mood="rested"
+        ),
+        # July 3 has no log at all - a missed night, not a zero.
+    ]
+    summary = summarize_sleep(events, dt(2026, 7, 1), dt(2026, 7, 3))
+    assert summary.nights_logged == 2
+    assert summary.logging_rate == 2 / 3
+    assert summary.average_time_asleep_minutes == 360
+    assert summary.average_regularity_percent == 85
+    assert summary.nights_under_six_hours == 1
+    assert summary.mood_counts == {"groggy": 1, "rested": 1}
+
+
+def test_summarize_sleep_handles_no_events() -> None:
+    summary = summarize_sleep([], dt(2026, 7, 1), dt(2026, 7, 3))
+    assert summary.nights_logged == 0
+    assert summary.logging_rate == 0.0
+    assert summary.average_time_asleep_minutes == 0.0
+    assert summary.average_regularity_percent is None
+    assert summary.average_sleep_latency_minutes is None
+    assert summary.mood_counts == {}
+
+
 def test_progress_metrics_are_deterministic() -> None:
     # Exercises use the real nested-sets shape (not an empty list) so this also
     # regression-tests build_progress_metrics -> volume_by_exercise against the
@@ -272,6 +311,10 @@ def test_progress_metrics_are_deterministic() -> None:
             MeasurementFixture(dt(2026, 7, 1), body_weight_lb=180),
             MeasurementFixture(dt(2026, 7, 3), body_weight_lb=179),
         ],
+        sleep_events=[
+            SleepFixture(dt(2026, 7, 1), time_asleep_minutes=420),
+            SleepFixture(dt(2026, 7, 2), time_asleep_minutes=360),
+        ],
         start=dt(2026, 7, 1),
         end=dt(2026, 7, 3),
         today=date(2026, 7, 3),
@@ -284,6 +327,9 @@ def test_progress_metrics_are_deterministic() -> None:
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
     assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
+    assert metrics["sleep"]["nights_logged"] == 2
+    assert metrics["sleep"]["logging_rate"] == 2 / 3
+    assert metrics["sleep"]["average_time_asleep_minutes"] == 390
 
 
 @given(st.lists(st.dates(min_value=date(2020, 1, 1), max_value=date(2020, 1, 31))))
