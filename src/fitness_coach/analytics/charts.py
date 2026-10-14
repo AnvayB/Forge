@@ -122,13 +122,32 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
         )
         paths.append(path)
 
-    adherence: dict[str, Any] = metrics.get("adherence") or {}
     nutrition: dict[str, Any] = metrics.get("nutrition") or {}
+    macro_items: list[tuple[str, float]] = []
+    for key, label in (
+        ("protein_goal_adherence", "Protein"),
+        ("carbs_goal_adherence", "Carbs"),
+        ("fat_goal_adherence", "Fat"),
+        ("calorie_goal_adherence", "Calories"),
+    ):
+        if key in nutrition:
+            macro_items.append((label, nutrition[key] * 100))
+    if macro_items:
+        macro_items.reverse()
+        path = output_dir / "macro_goal_adherence.png"
+        _horizontal_bar_chart(
+            title="Days meeting each macro goal",
+            labels=[name for name, _ in macro_items],
+            values=[value for _, value in macro_items],
+            value_format="{:.0f}%",
+            path=path,
+        )
+        paths.append(path)
+
+    adherence: dict[str, Any] = metrics.get("adherence") or {}
     adherence_items: list[tuple[str, float]] = []
     if "activity_completion_rate" in adherence:
         adherence_items.append(("Activity completion", adherence["activity_completion_rate"] * 100))
-    if "protein_goal_adherence" in nutrition:
-        adherence_items.append(("Protein goal met", nutrition["protein_goal_adherence"] * 100))
     if "protein_adherence_rate" in nutrition:
         adherence_items.append(("Protein adherence", nutrition["protein_adherence_rate"] * 100))
     if "logging_rate" in sleep:

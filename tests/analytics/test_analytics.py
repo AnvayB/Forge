@@ -12,6 +12,9 @@ from fitness_coach.analytics.cardio import summarize_cardio
 from fitness_coach.analytics.measurements import summarize_measurements
 from fitness_coach.analytics.nutrition import (
     average_nutrition,
+    calorie_goal_adherence,
+    carbs_goal_adherence,
+    fat_goal_adherence,
     missing_nutrition_days,
     protein_goal_adherence,
 )
@@ -115,6 +118,20 @@ def test_nutrition_averages_and_protein_goal_treat_unlogged_days_as_below_goal()
     assert averages.days_logged == 1
     assert averages.calories == 2200 / 3
     assert protein_goal_adherence(events, 150, dt(2026, 7, 1), dt(2026, 7, 3)) == 1 / 3
+
+
+def test_macro_goal_adherence_is_tracked_per_macro() -> None:
+    # Day 1 hits every goal; day 2 hits protein and fat but falls short on carbs
+    # and calories - the exact pattern reported for this user.
+    events = [
+        NutritionFixture(dt(2026, 7, 1), calories=2335, protein_g=160, carbs_g=300, fat_g=55),
+        NutritionFixture(dt(2026, 7, 2), calories=2000, protein_g=165, carbs_g=220, fat_g=60),
+    ]
+    start, end = dt(2026, 7, 1), dt(2026, 7, 2)
+    assert protein_goal_adherence(events, 160, start, end) == 1.0
+    assert fat_goal_adherence(events, 55, start, end) == 1.0
+    assert carbs_goal_adherence(events, 300, start, end) == 0.5
+    assert calorie_goal_adherence(events, 2335, start, end) == 0.5
 
 
 def test_missing_nutrition_days_handles_leap_year() -> None:
@@ -320,12 +337,20 @@ def test_progress_metrics_are_deterministic() -> None:
         today=date(2026, 7, 3),
         protein_goal_g=150,
         protein_adherence_threshold_g=145,
+        carbs_goal_g=200,
+        fat_goal_g=70,
+        calorie_goal=2000,
     )
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
     assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
+    # Both logged days hit carbs/fat/calories (200g, 70g, 2000cal each) - only the
+    # unlogged third day in the period drags each rate down to 2/3.
+    assert metrics["nutrition"]["carbs_goal_adherence"] == 2 / 3
+    assert metrics["nutrition"]["fat_goal_adherence"] == 2 / 3
+    assert metrics["nutrition"]["calorie_goal_adherence"] == 2 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
     assert metrics["sleep"]["nights_logged"] == 2
     assert metrics["sleep"]["logging_rate"] == 2 / 3

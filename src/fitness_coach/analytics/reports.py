@@ -13,6 +13,9 @@ from fitness_coach.analytics.measurements import MeasurementLike, summarize_meas
 from fitness_coach.analytics.nutrition import (
     NutritionLike,
     average_nutrition,
+    calorie_goal_adherence,
+    carbs_goal_adherence,
+    fat_goal_adherence,
     missing_nutrition_days,
     protein_goal_adherence,
 )
@@ -32,6 +35,9 @@ def build_progress_metrics(
     today: date,
     protein_goal_g: float,
     protein_adherence_threshold_g: float,
+    carbs_goal_g: float,
+    fat_goal_g: float,
+    calorie_goal: float,
 ) -> dict[str, Any]:
     """Build deterministic review metrics from event data."""
 
@@ -65,6 +71,11 @@ def build_progress_metrics(
             ),
             "protein_adherence_rate": protein_goal_adherence(
                 nutrition_list, protein_adherence_threshold_g, start, end
+            ),
+            "carbs_goal_adherence": carbs_goal_adherence(nutrition_list, carbs_goal_g, start, end),
+            "fat_goal_adherence": fat_goal_adherence(nutrition_list, fat_goal_g, start, end),
+            "calorie_goal_adherence": calorie_goal_adherence(
+                nutrition_list, calorie_goal, start, end
             ),
             "missing_days": missing_nutrition_days(nutrition_list, start, end),
         },
