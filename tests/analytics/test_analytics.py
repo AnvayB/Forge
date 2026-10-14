@@ -12,10 +12,14 @@ from fitness_coach.analytics.cardio import summarize_cardio
 from fitness_coach.analytics.measurements import summarize_measurements
 from fitness_coach.analytics.nutrition import (
     average_nutrition,
+    calorie_goal_adherence,
+    carbs_goal_adherence,
+    fat_goal_adherence,
     missing_nutrition_days,
     protein_goal_adherence,
 )
 from fitness_coach.analytics.reports import build_progress_metrics
+from fitness_coach.analytics.sleep import summarize_sleep
 from fitness_coach.analytics.strength import (
     best_set_among,
     best_weight_by_exercise,
@@ -57,6 +61,15 @@ class MeasurementFixture:
     waist_inches: float | None = None
     body_fat_percent: float | None = None
     progress_photo_path: str | None = None
+
+
+@dataclass
+class SleepFixture:
+    logged_for: datetime
+    time_asleep_minutes: int | None = None
+    regularity_percent: float | None = None
+    sleep_latency_minutes: int | None = None
+    wake_up_mood: str | None = None
 
 
 def dt(year: int, month: int, day: int) -> datetime:
@@ -105,6 +118,20 @@ def test_nutrition_averages_and_protein_goal_treat_unlogged_days_as_below_goal()
     assert averages.days_logged == 1
     assert averages.calories == 2200 / 3
     assert protein_goal_adherence(events, 150, dt(2026, 7, 1), dt(2026, 7, 3)) == 1 / 3
+
+
+def test_macro_goal_adherence_is_tracked_per_macro() -> None:
+    # Day 1 hits every goal; day 2 hits protein and fat but falls short on carbs
+    # and calories - the exact pattern reported for this user.
+    events = [
+        NutritionFixture(dt(2026, 7, 1), calories=2335, protein_g=160, carbs_g=300, fat_g=55),
+        NutritionFixture(dt(2026, 7, 2), calories=2000, protein_g=165, carbs_g=220, fat_g=60),
+    ]
+    start, end = dt(2026, 7, 1), dt(2026, 7, 2)
+    assert protein_goal_adherence(events, 160, start, end) == 1.0
+    assert fat_goal_adherence(events, 55, start, end) == 1.0
+    assert carbs_goal_adherence(events, 300, start, end) == 0.5
+    assert calorie_goal_adherence(events, 2335, start, end) == 0.5
 
 
 def test_missing_nutrition_days_handles_leap_year() -> None:
@@ -249,6 +276,35 @@ def test_summarize_measurements_uses_first_and_last_logged_value() -> None:
     assert summary.body_fat_percent is None
 
 
+def test_summarize_sleep_averages_only_logged_nights() -> None:
+    events = [
+        SleepFixture(
+            dt(2026, 7, 1), time_asleep_minutes=300, regularity_percent=80, wake_up_mood="groggy"
+        ),
+        SleepFixture(
+            dt(2026, 7, 2), time_asleep_minutes=420, regularity_percent=90, wake_up_mood="rested"
+        ),
+        # July 3 has no log at all - a missed night, not a zero.
+    ]
+    summary = summarize_sleep(events, dt(2026, 7, 1), dt(2026, 7, 3))
+    assert summary.nights_logged == 2
+    assert summary.logging_rate == 2 / 3
+    assert summary.average_time_asleep_minutes == 360
+    assert summary.average_regularity_percent == 85
+    assert summary.nights_under_six_hours == 1
+    assert summary.mood_counts == {"groggy": 1, "rested": 1}
+
+
+def test_summarize_sleep_handles_no_events() -> None:
+    summary = summarize_sleep([], dt(2026, 7, 1), dt(2026, 7, 3))
+    assert summary.nights_logged == 0
+    assert summary.logging_rate == 0.0
+    assert summary.average_time_asleep_minutes == 0.0
+    assert summary.average_regularity_percent is None
+    assert summary.average_sleep_latency_minutes is None
+    assert summary.mood_counts == {}
+
+
 def test_progress_metrics_are_deterministic() -> None:
     # Exercises use the real nested-sets shape (not an empty list) so this also
     # regression-tests build_progress_metrics -> volume_by_exercise against the
@@ -272,18 +328,33 @@ def test_progress_metrics_are_deterministic() -> None:
             MeasurementFixture(dt(2026, 7, 1), body_weight_lb=180),
             MeasurementFixture(dt(2026, 7, 3), body_weight_lb=179),
         ],
+        sleep_events=[
+            SleepFixture(dt(2026, 7, 1), time_asleep_minutes=420),
+            SleepFixture(dt(2026, 7, 2), time_asleep_minutes=360),
+        ],
         start=dt(2026, 7, 1),
         end=dt(2026, 7, 3),
         today=date(2026, 7, 3),
         protein_goal_g=150,
         protein_adherence_threshold_g=145,
+        carbs_goal_g=200,
+        fat_goal_g=70,
+        calorie_goal=2000,
     )
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
     assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
     assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
+    # Both logged days hit carbs/fat/calories (200g, 70g, 2000cal each) - only the
+    # unlogged third day in the period drags each rate down to 2/3.
+    assert metrics["nutrition"]["carbs_goal_adherence"] == 2 / 3
+    assert metrics["nutrition"]["fat_goal_adherence"] == 2 / 3
+    assert metrics["nutrition"]["calorie_goal_adherence"] == 2 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
+    assert metrics["sleep"]["nights_logged"] == 2
+    assert metrics["sleep"]["logging_rate"] == 2 / 3
+    assert metrics["sleep"]["average_time_asleep_minutes"] == 390
 
 
 @given(st.lists(st.dates(min_value=date(2020, 1, 1), max_value=date(2020, 1, 31))))

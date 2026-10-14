@@ -18,6 +18,7 @@ from fitness_coach.database.repositories import (
     CardioEventRepository,
     MeasurementEventRepository,
     NutritionEventRepository,
+    SleepEventRepository,
     UserRepository,
     WorkoutEventRepository,
 )
@@ -133,16 +134,21 @@ def run_progress_review(factory: ServiceFactory, bot: commands.Bot) -> None:
         cardio = CardioEventRepository(session).between(user.id, start, now)
         nutrition = NutritionEventRepository(session).between(user.id, start, now)
         measurements = MeasurementEventRepository(session).between(user.id, start, now)
+        sleep = SleepEventRepository(session).between(user.id, start, now)
         metrics = build_progress_metrics(
             workouts=workouts,
             cardio_events=cardio,
             nutrition_events=nutrition,
             measurements=measurements,
+            sleep_events=sleep,
             start=start,
             end=now,
             today=now.date(),
             protein_goal_g=factory.coach_settings.protein_goal_g,
             protein_adherence_threshold_g=factory.coach_settings.protein_adherence_threshold_g,
+            carbs_goal_g=factory.coach_settings.carbs_goal_g,
+            fat_goal_g=factory.coach_settings.fat_goal_g,
+            calorie_goal=factory.coach_settings.calorie_goal,
         )
         review = factory.coach_service(session).maybe_generate_review(user.id, metrics, now)
     if not review:

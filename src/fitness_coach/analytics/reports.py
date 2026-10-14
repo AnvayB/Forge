@@ -13,9 +13,13 @@ from fitness_coach.analytics.measurements import MeasurementLike, summarize_meas
 from fitness_coach.analytics.nutrition import (
     NutritionLike,
     average_nutrition,
+    calorie_goal_adherence,
+    carbs_goal_adherence,
+    fat_goal_adherence,
     missing_nutrition_days,
     protein_goal_adherence,
 )
+from fitness_coach.analytics.sleep import SleepLike, summarize_sleep
 from fitness_coach.analytics.strength import WorkoutLike, sessions_by_type, volume_by_exercise
 
 
@@ -25,11 +29,15 @@ def build_progress_metrics(
     cardio_events: Iterable[CardioLike],
     nutrition_events: Iterable[NutritionLike],
     measurements: Iterable[MeasurementLike],
+    sleep_events: Iterable[SleepLike],
     start: datetime,
     end: datetime,
     today: date,
     protein_goal_g: float,
     protein_adherence_threshold_g: float,
+    carbs_goal_g: float,
+    fat_goal_g: float,
+    calorie_goal: float,
 ) -> dict[str, Any]:
     """Build deterministic review metrics from event data."""
 
@@ -37,6 +45,7 @@ def build_progress_metrics(
     cardio_list = list(cardio_events)
     nutrition_list = list(nutrition_events)
     measurement_list = list(measurements)
+    sleep_list = list(sleep_events)
     active_dates = unique_event_dates([*workout_list, *cardio_list])
     nutrition_averages = average_nutrition(nutrition_list, start, end)
 
@@ -63,7 +72,13 @@ def build_progress_metrics(
             "protein_adherence_rate": protein_goal_adherence(
                 nutrition_list, protein_adherence_threshold_g, start, end
             ),
+            "carbs_goal_adherence": carbs_goal_adherence(nutrition_list, carbs_goal_g, start, end),
+            "fat_goal_adherence": fat_goal_adherence(nutrition_list, fat_goal_g, start, end),
+            "calorie_goal_adherence": calorie_goal_adherence(
+                nutrition_list, calorie_goal, start, end
+            ),
             "missing_days": missing_nutrition_days(nutrition_list, start, end),
         },
         "measurements": asdict(summarize_measurements(measurement_list)),
+        "sleep": asdict(summarize_sleep(sleep_list, start, end)),
     }
