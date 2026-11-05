@@ -16,15 +16,16 @@ file is read fresh on every request.
 
 ## Exercise Ordering & Pre-Fatigue Management
 
-Perform technically demanding, multi-joint, or heavier compound lifts before smaller
-isolation or single-joint accessory movements. Fatigue and reduced motor control from
-prior sets increase injury risk and reduce force production on the harder lift if it's
-done later - this is standard resistance-training program design guidance, and the same
-logic supports alternating opposing movement patterns (e.g. push/pull) within a session
-so one exercise doesn't pre-fatigue the muscles needed for the next.
+Strength gains are largest in the exercises performed earliest in a session, so put the
+lifts you most want to progress first (usually the heavier compound lifts). Muscle growth
+looks similar whatever the order, so order is a prioritization choice, not a requirement
+for hypertrophy. Alternating push and pull movements is a common way to limit local
+fatigue between hard sets, but that specific tactic has little direct evidence behind it.
 
-Source: NSCA (Haff GG, Triplett NT, eds.), *Essentials of Strength Training and
-Conditioning*, 4th ed., Human Kinetics — https://canada.humankinetics.com/products/essentials-of-strength-training-and-conditioning-4th-edition-with-hkpropel-access
+Source: Nunes JP, Grgic J, Cunha PM, Ribeiro AS, Schoenfeld BJ, de Salles BF, Cyrino ES.
+"What influence does resistance exercise order have on muscular strength gains and muscle
+hypertrophy? A systematic review and meta-analysis." European Journal of Sport Science,
+2021;21(2):149-157 — https://pubmed.ncbi.nlm.nih.gov/32077380/
 
 ---
 
