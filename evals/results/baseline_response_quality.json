@@ -1,0 +1,35 @@
+{
+  "captured_at_commit": "8596289",
+  "workout_confirmation": {
+    "reply": "Logged: Arms\n- Incline Dumbbell Curl: 20lbs x8 \u00d72, 20lbs x10 \u00d72, 22.5lbs x8 \u00d74\n- Cable Tricep Pushdown: 80lbs x15, 100lbs x10, 110lbs x10, 120lbs x7\n- Dumbbell Shoulder Press: 25lbs x10 \u00d72, 27.5lbs x8 \u00d72, 32.5lbs x8 \u00d72, 40lbs x8 \u00d72, 32.5lbs x10 \u00d72\n- Dumbbell Hammer Curl: 25lbs x8 \u00d72, 27.5lbs x7 \u00d72, 27.5lbs x9 \u00d72, 27.5lbs x8 \u00d72\n\nNew PRs:\n- Dumbbell Shoulder Press: 40lbs x8 (up from 35lbs x8)\n- Dumbbell Hammer Curl: 27.5lbs x9 (up from 30lbs x5)\n\nPerformance was above your recent baseline, with most sets in a productive rep range.",
+    "words": 98,
+    "lines": 11,
+    "max_line_chars": 98
+  },
+  "workout_confirmation_after": {
+    "reply": "Logged: Arms\n- Incline Dumbbell Curl: 20lbs x8 \u00d72, 20lbs x10 \u00d72, 22.5lbs x8 \u00d74\n- Cable Tricep Pushdown: (80lbs x15) 100lbs x10, 110lbs x10, 120lbs x7\n- Dumbbell Shoulder Press: (25lbs x10 \u00d72, 27.5lbs x8 \u00d72) 32.5lbs x8 \u00d72, 40lbs x8 \u00d72 \u2192 32.5lbs x10 \u00d72\n- Dumbbell Hammer Curl: 25lbs x8 \u00d72, 27.5lbs x7 \u00d72, 27.5lbs x9 \u00d72, 27.5lbs x8 \u00d72\n\nNew PRs:\n- Dumbbell Shoulder Press: 40lbs x8 (up from 35lbs x8)\n- Dumbbell Hammer Curl: 27.5lbs x9 (up from 30lbs x5)",
+    "words": 85,
+    "lines": 9,
+    "max_line_chars": 100
+  },
+  "review_before": {
+    "words": 365,
+    "checks": {
+      "within_word_limit": false,
+      "no_boilerplate": false,
+      "grounded_numbers": false,
+      "no_failure_push": true
+    },
+    "word_limit": 300
+  },
+  "review_exemplar_after": {
+    "words": 142,
+    "checks": {
+      "within_word_limit": true,
+      "no_boilerplate": true,
+      "grounded_numbers": true,
+      "no_failure_push": true
+    },
+    "word_limit": 300
+  }
+}
