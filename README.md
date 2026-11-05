@@ -58,7 +58,8 @@ All commands are used via Discord DM (or any channel the bot is in), prefixed wi
 | Command | What it does | Example |
 |---|---|---|
 | `!checkin` | Accountability nudge — surfaces today's plan and any open commitments | `!checkin` |
-| `!workout` | Logs a completed workout from free text or one or more Arrow/Apple Fitness screenshots; typed exercise lists get parsed into structured sets, and any set that beats your prior best for that exercise is flagged as a new PR | `!workout bicep curl: 30lbs x10, 35lbs x5` |
+| `!workout` | Logs a completed workout from free text or one or more Arrow/Apple Fitness screenshots; typed exercise lists get parsed into structured sets, warm-ups and back-offs are detected automatically (tag a set inline with `w` or `bo` to override), and any set that beats your prior best for that exercise is flagged as a new PR | `!workout bicep curl: 30lbs x10, 35lbs x5` |
+| `!setfix` | Re-tags sets in your latest workout as `warmup`, `working` or `backoff` (the bot infers these by default); only the label changes, never the logged weights or reps | `!setfix shoulder press 1-2 warmup` |
 | `!cardio` | Logs cardio as minutes + modality | `!cardio 35 incline walk` |
 | `!nutrition` | Logs carbs, fat, protein, and calories **remaining** (MyFitnessPal's "Nutrients Remaining" numbers), in that order | `!nutrition 129g -1g 90g 814cals` |
 | `!sleep` | Logs sleep as plain minutes or an `Xh Ym` duration | `!sleep 6h38m` |
@@ -66,6 +67,10 @@ All commands are used via Discord DM (or any channel the bot is in), prefixed wi
 | `!adjust` | Logs a short-lived deviation from the default schedule for N days starting today, then the default split resumes automatically | `!adjust 2 Shift chest/back to Monday, cardio/rest Tuesday this week` |
 | `!progress` | Delivers the periodic progress review, but only once it's actually due (default: every 30 days) — analytics stay locked between review periods by design | `!progress` |
 | `!recent` | Lists the last few logged workouts, cardio, nutrition, and sleep entries straight from the database (default 5 each, max 20) — a raw sanity check that logging is working, not an analytics view, so it's available even while `!progress` is locked | `!recent 10` |
+| `!setbaseline` | Sets the baseline weight (and optional max) that each logged set of that exercise is judged against | `!setbaseline Bench Press 135 185` |
+| `!baselines` | Lists your configured baselines | `!baselines` |
+| `!lastreview` | Re-sends your most recent progress review (and its charts), bypassing the cadence lock | `!lastreview` |
+| `!route` | Shows how the router classifies a message (route, tools, research allowed) — a diagnostic, nothing is sent to the model | `!route why is my bench stuck` |
 
 ## Test
 

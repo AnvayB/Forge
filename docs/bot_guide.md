@@ -17,6 +17,7 @@ These only fire once the bot has captured your Discord user ID — send it at le
 |---|---|---|
 | `!checkin` | `!checkin` | Accountability nudge — your plan for today, open commitments |
 | `!workout` | `!workout Chest/back/shoulders, felt strong` or attach one or more Arrow/Apple Fitness screenshots | Logs a completed workout — free text and typed exercise lists (e.g. `bicep curl: 30lbs x10, 35lbs x5`) get parsed into structured sets, same as a screenshot would. If a set beats every prior set you've logged for that exercise (by estimated one-rep max), the confirmation calls it out as a new PR — a single-event fact, not locked analytics |
+| `!setfix` | `!setfix shoulder press 1-2 warmup` | Re-tags sets in your **latest** workout (`warmup`, `working` or `backoff`; `w`, `top` and `bo` also work). Set numbers count in the order shown, with `×N` counting as N sets. Only the label changes — logged weights and reps are never touched. Bad input gets a one-line reply and changes nothing |
 | `!cardio` | `!cardio 35 incline walk` | Logs cardio — minutes, then modality |
 | `!nutrition` | `!nutrition 129g -1g 90g 814cals` | Logs carbs, fat, protein, calories **remaining** (MyFitnessPal's "Nutrients Remaining" numbers) — in that order; units like `g`/`cals` are optional, plain numbers work too |
 | `!sleep` | `!sleep 6h38m` or `!sleep 398` | Logs sleep — plain minutes or an `Xh Ym` duration |
@@ -30,6 +31,10 @@ These only fire once the bot has captured your Discord user ID — send it at le
 | `!route` | `!route why is my bench stuck` | Shows how the router classifies a message (route, tools, research allowed) — a diagnostic, nothing is sent to the model |
 
 ## Image uploads
+
+**Warm-ups and back-offs.** You don't have to tag anything: the bot infers them from the shape of the exercise (clearly lighter sets before your heaviest set are warm-ups; later sets are back-offs). Warm-ups show in parentheses and lighter back-offs after an arrow, e.g. `Incline Press: (20lbs x10, 25lbs x8) 40lbs x5 → 35lbs x8 ×2`. Warm-ups are left out of working volume, "top set" comparisons and weight suggestions, but a set that beats your best is still a PR whatever it's labeled. When typing a log you can tag a set inline (`curl: 20x10 w, 30x8, 35x5, 30x8 bo`), or fix it afterwards with `!setfix`. Matching right/left dumbbell rows from Arrow are logged as one set.
+
+**Weight suggestions** only appear as a single `Next time (...)` line when the data earns one: the top set reached the top of the exercise's rep range in 2 sessions in a row (add weight), or reps stayed under the range twice (ease off). Rep ranges have defaults by exercise type and can be overridden under `rep_targets` in `config/coach_settings.yaml`. Suggestions are optional guidance — leave 1–3 reps in reserve — and nothing changes your recorded weights.
 
 You can attach images directly to `!workout` (multiple screenshots — e.g. Arrow + Apple Fitness — get merged into one workout entry). For any other image type, or if you're not using a command, just attach the image with a plain message: a keyword in your message or filename picks the type, and if none matches, the bot asks the vision model to classify the screenshot itself instead of guessing.
 
