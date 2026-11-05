@@ -281,8 +281,8 @@ def test_progress_metrics_are_deterministic() -> None:
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
-    assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
-    assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
+    assert metrics["nutrition"]["protein_goal_met_rate"] == 1 / 3
+    assert metrics["nutrition"]["protein_near_goal_rate"] == 2 / 3
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
 
 

@@ -16,6 +16,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 _SURFACE = "#fcfcfb"
 _INK_PRIMARY = "#0b0b0b"
@@ -37,7 +38,13 @@ def _style_axes(ax: plt.Axes) -> None:
 
 
 def _horizontal_bar_chart(
-    *, title: str, labels: list[str], values: list[float], value_format: str, path: Path
+    *,
+    title: str,
+    labels: list[str],
+    values: list[float],
+    value_format: str,
+    path: Path,
+    integer_axis: bool = False,
 ) -> None:
     """Render one single-series magnitude-by-category bar chart to `path`.
 
@@ -56,6 +63,8 @@ def _horizontal_bar_chart(
 
     max_value = max(values) if values else 0.0
     ax.set_xlim(0, max_value * 1.2 if max_value else 1)
+    if integer_axis:  # counts of sessions/days never sit at 0.2 or 0.5
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     for y, value in zip(y_positions, values, strict=True):
         ax.text(
             value + max_value * 0.02,
@@ -79,13 +88,14 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
     output_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
 
-    volume_by_exercise: dict[str, float] = metrics.get("workouts", {}).get("volume_by_exercise") or {}
+    workouts: dict[str, Any] = metrics.get("workouts") or {}
+    volume_by_exercise: dict[str, float] = workouts.get("volume_by_exercise") or {}
     if volume_by_exercise:
         top = sorted(volume_by_exercise.items(), key=lambda item: item[1], reverse=True)[:8]
         top.reverse()
         path = output_dir / "volume_by_exercise.png"
         _horizontal_bar_chart(
-            title="Volume by exercise (sets x reps x weight)",
+            title="Working volume by exercise (warm-ups excluded)",
             labels=[name.title() for name, _ in top],
             values=[value for _, value in top],
             value_format="{:,.0f}",
@@ -104,6 +114,7 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
             values=[float(value) for _, value in items],
             value_format="{:.0f}",
             path=path,
+            integer_axis=True,
         )
         paths.append(path)
 
@@ -112,10 +123,10 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
     adherence_items: list[tuple[str, float]] = []
     if "activity_completion_rate" in adherence:
         adherence_items.append(("Activity completion", adherence["activity_completion_rate"] * 100))
-    if "protein_goal_adherence" in nutrition:
-        adherence_items.append(("Protein goal met", nutrition["protein_goal_adherence"] * 100))
-    if "protein_adherence_rate" in nutrition:
-        adherence_items.append(("Protein adherence", nutrition["protein_adherence_rate"] * 100))
+    if "protein_goal_met_rate" in nutrition:
+        adherence_items.append(("Protein goal met", nutrition["protein_goal_met_rate"] * 100))
+    if "protein_near_goal_rate" in nutrition:
+        adherence_items.append(("Protein near goal", nutrition["protein_near_goal_rate"] * 100))
     if adherence_items:
         adherence_items.reverse()
         path = output_dir / "adherence.png"
@@ -125,6 +136,22 @@ def build_progress_charts(metrics: dict[str, Any], output_dir: Path) -> list[Pat
             values=[value for _, value in adherence_items],
             value_format="{:.0f}%",
             path=path,
+        )
+        paths.append(path)
+
+    macro_days: dict[str, int] = nutrition.get("macro_goal_days") or {}
+    if macro_days:
+        items = [(name.title(), float(days)) for name, days in macro_days.items()]
+        items.sort(key=lambda item: item[1], reverse=True)
+        items.reverse()
+        path = output_dir / "macro_goal_days.png"
+        _horizontal_bar_chart(
+            title="Days meeting each macro goal",
+            labels=[name for name, _ in items],
+            values=[value for _, value in items],
+            value_format="{:.0f}",
+            path=path,
+            integer_axis=True,
         )
         paths.append(path)
 
