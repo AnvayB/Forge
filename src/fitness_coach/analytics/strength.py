@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
 
+from fitness_coach.analytics.sets import SetType, classify_sets
+
 
 class WorkoutLike(Protocol):
     """Protocol for workout event rows."""
@@ -35,14 +37,31 @@ def exercise_volume(exercise: dict[str, Any]) -> float:
 
     sets = exercise.get("sets")
     if isinstance(sets, list):
-        return sum(
-            _to_float(exercise_set.get("weight")) * _to_float(exercise_set.get("reps"))
-            for exercise_set in sets
-        )
+        return sum(_set_volume(exercise_set) for exercise_set in sets)
     set_count = _to_float(sets)
     reps = _to_float(exercise.get("reps") or exercise.get("target_reps"))
     weight = _to_float(exercise.get("weight") or exercise.get("weight_lb"))
     return set_count * reps * weight
+
+
+def _set_volume(exercise_set: dict[str, Any]) -> float:
+    """Weight * reps for one set; ``sides`` (2 for a merged right/left pair) scales it."""
+
+    sides = _to_float(exercise_set.get("sides")) or 1.0
+    return _to_float(exercise_set.get("weight")) * _to_float(exercise_set.get("reps")) * sides
+
+
+def working_volume(exercise: dict[str, Any]) -> float:
+    """Volume excluding warm-up sets (inferred, or as the user explicitly tagged them)."""
+
+    sets = exercise.get("sets")
+    if not isinstance(sets, list):
+        return exercise_volume(exercise)
+    return sum(
+        _set_volume(exercise_set)
+        for exercise_set, set_type in zip(sets, classify_sets(sets), strict=True)
+        if set_type != SetType.WARMUP
+    )
 
 
 def total_workout_volume(workout: WorkoutLike) -> float:
@@ -59,6 +78,17 @@ def volume_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, float]:
         for exercise in workout.exercises:
             name = str(exercise.get("name", "unknown")).lower()
             totals[name] = totals.get(name, 0.0) + exercise_volume(exercise)
+    return totals
+
+
+def working_volume_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, float]:
+    """Aggregate volume by exercise name, leaving warm-up sets out."""
+
+    totals: dict[str, float] = {}
+    for workout in workouts:
+        for exercise in workout.exercises:
+            name = str(exercise.get("name", "unknown")).lower()
+            totals[name] = totals.get(name, 0.0) + working_volume(exercise)
     return totals
 
 
@@ -104,6 +134,28 @@ def _one_rep_max_estimate(weight: float, reps: float) -> float:
     if reps <= 1:
         return weight
     return weight * (1 + reps / 30)
+
+
+def top_working_set(exercise: dict[str, Any]) -> tuple[float, float] | None:
+    """The best (weight, reps) among non-warm-up sets, ranked by estimated one-rep max.
+
+    Estimated maxima only rank sets against each other; they are never shown as targets.
+    """
+
+    sets = exercise.get("sets")
+    if not isinstance(sets, list):
+        return None
+    best: tuple[float, float] | None = None
+    best_score = 0.0
+    for exercise_set, set_type in zip(sets, classify_sets(sets), strict=True):
+        weight = _to_float(exercise_set.get("weight"))
+        reps = _to_float(exercise_set.get("reps"))
+        if set_type == SetType.WARMUP or weight <= 0 or reps <= 0:
+            continue
+        score = _one_rep_max_estimate(weight, reps)
+        if score > best_score:
+            best, best_score = (weight, reps), score
+    return best
 
 
 def best_set_by_exercise(workouts: Iterable[WorkoutLike]) -> dict[str, tuple[float, float]]:
