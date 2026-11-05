@@ -45,3 +45,11 @@ external_research_timeout_seconds: 8.0
 
 # Max function-calling rounds per reply (each round may execute several tools).
 max_tool_rounds: 4
+
+# Progression guidance (all optional; defaults live in analytics/progression.py).
+# rep_targets:
+#   lateral raise: {top: [12, 20], backoff: [12, 20]}
+# equipment_increments: {dumbbell: 2.5, barbell: 5, machine: 5, cable: 5}   # lbs per step
+# hits_to_progress: 2        # sessions at the top of the range before adding weight
+# sleep_normal_minutes: 420  # at/above: train as scheduled
+# sleep_low_minutes: 360     # below: trim volume, no top-set pushes

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -140,3 +140,78 @@ def missing_nutrition_days(
     logged = {event.logged_for.date() for event in events}
     total_days = (end.date() - start.date()).days + 1
     return total_days - len({day for day in logged if start.date() <= day <= end.date()})
+
+
+def average_nutrition_logged_days(
+    events: Iterable[NutritionLike], start: datetime, end: datetime
+) -> NutritionAverages:
+    """Average daily totals over only the days that were logged.
+
+    Shown next to the calendar-day averages so a low average can be told apart from simply
+    not logging: this one answers "what did I eat on the days I tracked?".
+    """
+
+    if end < start:
+        raise ValueError("end must be on or after start")
+    event_list = [
+        event for event in events if start.date() <= event.logged_for.date() <= end.date()
+    ]
+    count = len(event_list)
+    if count == 0:
+        return NutritionAverages(0, 0.0, 0.0, 0.0, 0.0)
+    return NutritionAverages(
+        days_logged=count,
+        calories=sum(event.calories for event in event_list) / count,
+        protein_g=sum(event.protein_g for event in event_list) / count,
+        carbs_g=sum(event.carbs_g for event in event_list) / count,
+        fat_g=sum(event.fat_g for event in event_list) / count,
+    )
+
+
+def protein_goal_days(
+    events: Iterable[NutritionLike], protein_goal_g: float, start: datetime, end: datetime
+) -> int:
+    """Number of logged days in the period with protein at or above the goal."""
+
+    return len(
+        {
+            event.logged_for.date()
+            for event in events
+            if start.date() <= event.logged_for.date() <= end.date()
+            and event.protein_g >= protein_goal_g
+        }
+    )
+
+
+MACRO_TOLERANCE = 0.10
+"""Calories, carbs and fat count as "met" within 10% of the goal; protein is a floor."""
+
+
+def macro_goal_days(
+    events: Iterable[NutritionLike],
+    goals: Mapping[str, float],
+    start: datetime,
+    end: datetime,
+) -> dict[str, int]:
+    """Days each macro goal was met: protein at/above goal, the rest within tolerance."""
+
+    counts = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+    for event in events:
+        if not start.date() <= event.logged_for.date() <= end.date():
+            continue
+        values = {
+            "calories": event.calories,
+            "protein": event.protein_g,
+            "carbs": event.carbs_g,
+            "fat": event.fat_g,
+        }
+        for macro, value in values.items():
+            goal = goals.get(macro)
+            if not goal:
+                continue
+            if macro == "protein":
+                met = value >= goal
+            else:
+                met = abs(value - goal) <= goal * MACRO_TOLERANCE
+            counts[macro] += int(met)
+    return counts

@@ -28,3 +28,21 @@ Run one layer while iterating with:
 pytest tests/bot
 pytest tests/integration
 ```
+
+## Response-quality checks
+
+Coaching quality is measured without asserting exact model text.
+
+- **Deterministic replies** (workout confirmation) are compared to a recorded baseline:
+  `evals/results/baseline_response_quality.json` holds the word count/lines of the same
+  fixture (`evals/response_fixtures.py`) before and after a change, and tests fail if the
+  reply grows past the baseline.
+- **Review narrative** is checked by `evals/scoring.py::score_review` (word limit, banned
+  boilerplate, numbers traceable to the metrics, no push to failure). The real October
+  review (`evals/data/october_review_before.txt`) must fail it and the tight exemplar must
+  pass. A live model run can be scored the same way.
+- **Judge dimensions** `specificity` and `no_invented_problems` extend the opt-in LLM
+  judge for online runs (`python -m evals.run_evals --mode online --judge`).
+- **Knowledge base**: `tests/research/test_knowledge_base_sources.py` lints every cited URL
+  (vetted domain, never a storefront page).
+

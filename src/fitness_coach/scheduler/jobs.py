@@ -4,23 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from discord.ext import commands
 
-from fitness_coach.analytics.reports import build_progress_metrics
+from fitness_coach.analytics.readiness import sleep_readiness
 from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import CoachService
 from fitness_coach.database.repositories import (
-    CardioEventRepository,
-    MeasurementEventRepository,
-    NutritionEventRepository,
-    SleepEventRepository,
     UserRepository,
-    WorkoutEventRepository,
 )
 from fitness_coach.text_chunking import chunk_message
 
@@ -75,6 +70,16 @@ def build_workout_text(coach: CoachService, user_id: str, timezone: str) -> str:
         "six exercises, sets, rep ranges, and brief guidance on intensity, form, rest, "
         "and progression."
     )
+    readiness = sleep_readiness(
+        coach.last_night_sleep_minutes(user_id),
+        normal_minutes=coach.settings.sleep_normal_minutes,
+        low_minutes=coach.settings.sleep_low_minutes,
+    )
+    if readiness is not None:
+        workout_prompt += (
+            f" Last night's sleep was {readiness.label} ({readiness.tier}). "
+            f"Adjustment rule: {readiness.guidance} Open with that in one short line."
+        )
     return coach.answer_question(user_id, workout_prompt).message
 
 
@@ -129,28 +134,9 @@ def run_progress_review(factory: ServiceFactory, bot: commands.Bot) -> None:
         )
         discord_user_id = user.discord_user_id
         now = datetime.now(UTC)
-        start = now - timedelta(days=factory.coach_settings.review_interval_days)
-        workouts = WorkoutEventRepository(session).between(user.id, start, now)
-        cardio = CardioEventRepository(session).between(user.id, start, now)
-        nutrition = NutritionEventRepository(session).between(user.id, start, now)
-        measurements = MeasurementEventRepository(session).between(user.id, start, now)
-        sleep = SleepEventRepository(session).between(user.id, start, now)
-        metrics = build_progress_metrics(
-            workouts=workouts,
-            cardio_events=cardio,
-            nutrition_events=nutrition,
-            measurements=measurements,
-            sleep_events=sleep,
-            start=start,
-            end=now,
-            today=now.date(),
-            protein_goal_g=factory.coach_settings.protein_goal_g,
-            protein_adherence_threshold_g=factory.coach_settings.protein_adherence_threshold_g,
-            carbs_goal_g=factory.coach_settings.carbs_goal_g,
-            fat_goal_g=factory.coach_settings.fat_goal_g,
-            calorie_goal=factory.coach_settings.calorie_goal,
-        )
-        review = factory.coach_service(session).maybe_generate_review(user.id, metrics, now)
+        coach = factory.coach_service(session)
+        metrics = coach.build_review_metrics(user.id, now)
+        review = coach.maybe_generate_review(user.id, metrics, now)
     if not review:
         return
     logger.info("progress_review_generated user_id=%s review_id=%s", user.id, review.id)

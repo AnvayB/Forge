@@ -299,7 +299,7 @@ def test_summarize_sleep_handles_no_events() -> None:
     summary = summarize_sleep([], dt(2026, 7, 1), dt(2026, 7, 3))
     assert summary.nights_logged == 0
     assert summary.logging_rate == 0.0
-    assert summary.average_time_asleep_minutes == 0.0
+    assert summary.average_time_asleep_minutes is None
     assert summary.average_regularity_percent is None
     assert summary.average_sleep_latency_minutes is None
     assert summary.mood_counts == {}
@@ -337,20 +337,20 @@ def test_progress_metrics_are_deterministic() -> None:
         today=date(2026, 7, 3),
         protein_goal_g=150,
         protein_adherence_threshold_g=145,
-        carbs_goal_g=200,
-        fat_goal_g=70,
-        calorie_goal=2000,
+        macro_goals={"calories": 2000, "protein": 150, "carbs": 200, "fat": 70},
     )
     assert metrics["workouts"]["sessions"] == 1
     assert metrics["workouts"]["volume_by_exercise"] == {"bench press": 1080}
     assert metrics["cardio"]["total_minutes"] == 20
-    assert metrics["nutrition"]["protein_goal_adherence"] == 1 / 3
-    assert metrics["nutrition"]["protein_adherence_rate"] == 2 / 3
-    # Both logged days hit carbs/fat/calories (200g, 70g, 2000cal each) - only the
-    # unlogged third day in the period drags each rate down to 2/3.
-    assert metrics["nutrition"]["carbs_goal_adherence"] == 2 / 3
-    assert metrics["nutrition"]["fat_goal_adherence"] == 2 / 3
-    assert metrics["nutrition"]["calorie_goal_adherence"] == 2 / 3
+    assert metrics["nutrition"]["protein_goal_met_rate"] == 1 / 3
+    assert metrics["nutrition"]["protein_near_goal_rate"] == 2 / 3
+    # Both logged days hit calories/carbs/fat; only the first met the strict protein goal.
+    assert metrics["nutrition"]["macro_goal_days"] == {
+        "calories": 2,
+        "protein": 1,
+        "carbs": 2,
+        "fat": 2,
+    }
     assert metrics["measurements"]["body_weight_lb"]["change"] == -1
     assert metrics["sleep"]["nights_logged"] == 2
     assert metrics["sleep"]["logging_rate"] == 2 / 3

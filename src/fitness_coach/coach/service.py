@@ -5,9 +5,20 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from fitness_coach.analytics.progression import Action, suggest_next
+from fitness_coach.analytics.reports import build_progress_metrics
+from fitness_coach.analytics.sets import (
+    SetType,
+    classify_sets,
+    normalize_exercises,
+    parse_number,
+    parse_set_numbers,
+    parse_set_type,
+)
 from fitness_coach.analytics.strength import (
     PROMOTION_STREAK,
     PersonalRecord,
@@ -15,6 +26,7 @@ from fitness_coach.analytics.strength import (
     find_new_personal_records,
     judge_against_baseline,
     next_tracked_weight,
+    top_working_set,
 )
 from fitness_coach.coach.conversation import ConversationWindow
 from fitness_coach.coach.openai_client import CoachOpenAIClient
@@ -69,6 +81,32 @@ cumulative statistic, so it's exempt from the analytics lock - see the Analytics
 Philosophy in coach_principles.md and "acknowledge meaningful effort" under
 Accountability Philosophy.
 """
+
+
+REVIEW_WORD_LIMIT = 300
+
+_REVIEW_INSTRUCTIONS = (
+    "Write the 30-day progress review from these deterministic metrics (JSON). Do not "
+    "calculate new analytics; every number you cite must appear in the metrics.\n"
+    "Format: short plain-text sections in this order, skipping any section with nothing "
+    "meaningful to say: Period, Adherence, Workouts, Cardio, Nutrition, Measurements, "
+    "Sleep, Bottom line.\n"
+    "Rules:\n"
+    "- Lead with the 1-3 takeaways the data best supports. Do not comment on every metric "
+    "or every exercise.\n"
+    "- Workouts: name the exercises in `highlights` (real progress or stalls). Volume counts "
+    "working sets only and says how much was done, not how well.\n"
+    "- Say plainly when something is working and needs no change. Suggest an adjustment only "
+    "when the data supports it; never invent a problem.\n"
+    "- Keep logging coverage separate from results: `coverage` and `logging_rate` say how "
+    "much was logged; averages_logged_days and the goal rates say what happened.\n"
+    "- No per-section 'Interpretation' lines, no generic encouragement, no explaining what "
+    "a metric means, no hedging about how a streak is counted.\n"
+    "- Never encourage training to failure or chasing maximal weights.\n"
+    "- End with a one-sentence bottom line and one concrete next target.\n"
+    f"- Stay under {REVIEW_WORD_LIMIT} words.\n"
+    "Metrics:"
+)
 
 
 class CoachService:
@@ -133,7 +171,7 @@ class CoachService:
                 duration_minutes=payload.duration_minutes,
                 calories_burned=payload.calories_burned,
                 perceived_effort=payload.perceived_effort,
-                exercises=payload.exercises,
+                exercises=normalize_exercises(payload.exercises),
                 proof_source=payload.proof_source,
                 proof_confidence=payload.proof_confidence,
                 notes=payload.notes,
@@ -146,7 +184,8 @@ class CoachService:
         baseline_lines = self._check_exercise_baselines(user_id, event.exercises)
         if baseline_lines:
             message = f"{message}\n\n" + "\n".join(baseline_lines)
-        message = f"{message}\n\n{_workout_quality_review(event, history)}"
+        message = _append_review(message, _workout_quality_review(event, history, records))
+        message = _append_review(message, self._next_time_line(event, history))
         return CoachResponse(
             message=message,
             metadata={
@@ -155,6 +194,87 @@ class CoachService:
                 "personal_records": [record.exercise for record in records],
             },
         )
+
+    def _next_time_line(
+        self, event: models.WorkoutEvent, history: list[models.WorkoutEvent]
+    ) -> str:
+        """At most one line, and only when the data earns a weight change or an ease-off.
+
+        Routine "add a rep" or "repeat this" guidance is left out: it is the default and
+        would only add length.
+        """
+
+        recent_first = sorted(
+            history, key=lambda workout: _ensure_utc(workout.occurred_at), reverse=True
+        )
+        for exercise in event.exercises:
+            name = str(exercise.get("name", "")).strip()
+            if not name:
+                continue
+            sessions = [exercise] + [
+                prior
+                for workout in recent_first
+                for prior in workout.exercises
+                if str(prior.get("name", "")).strip().casefold() == name.casefold()
+            ]
+            suggestion = suggest_next(
+                name,
+                sessions,
+                rep_targets=self.settings.rep_targets,
+                increments=self.settings.equipment_increments,
+                hits_to_progress=self.settings.hits_to_progress,
+            )
+            if suggestion.action in (Action.INCREASE_WEIGHT, Action.EASE_OFF):
+                return f"Next time ({name}): {suggestion.message}"
+        return ""
+
+    def reclassify_sets(self, user_id: str, args: str) -> CoachResponse:
+        """Re-tag sets in the latest workout: ``<exercise> <set numbers> <type>``.
+
+        Only the ``set_type`` key changes; the recorded weights and reps are never touched.
+        Any problem is answered in one line and nothing is modified.
+        """
+
+        usage = (
+            "Use: !setfix <exercise> <set numbers> <warmup|working|backoff>, "
+            "e.g. !setfix press 1-2 warmup"
+        )
+        parts = args.split()
+        if len(parts) < 3:
+            return _setfix_reply(usage, updated=False)
+        set_type = parse_set_type(parts[-1])
+        numbers = parse_set_numbers(parts[-2])
+        query = " ".join(parts[:-2])
+        if set_type is None or numbers is None:
+            return _setfix_reply(usage, updated=False)
+
+        latest = self.workouts.recent(user_id, limit=1)
+        if not latest:
+            return _setfix_reply("No workout logged yet to fix.", updated=False)
+        event = latest[0]
+        matches = [e for e in event.exercises if _exercise_name_matches(query, e.get("name"))]
+        if len(matches) != 1:
+            names = ", ".join(str(e.get("name")) for e in event.exercises)
+            problem = "matches more than one exercise" if matches else "isn't in your last workout"
+            return _setfix_reply(f"'{query}' {problem}. Last workout: {names}.", updated=False)
+        target = matches[0]
+        sets = target.get("sets")
+        if not isinstance(sets, list) or max(numbers) > len(sets):
+            count = len(sets) if isinstance(sets, list) else 0
+            return _setfix_reply(f"{target.get('name')} has {count} sets.", updated=False)
+
+        wanted = {number - 1 for number in numbers}
+        retagged = {
+            **target,
+            "sets": [
+                {**item, "set_type": set_type.value} if index in wanted else dict(item)
+                for index, item in enumerate(sets)
+            ],
+        }
+        event.exercises = [retagged if e is target else e for e in event.exercises]
+        self.workouts.session.flush()
+        rendered = _format_exercise_sets(retagged["sets"])
+        return _setfix_reply(f"{target.get('name')}: {rendered}", updated=True)
 
     def log_cardio(self, user_id: str, payload: CardioLog) -> CoachResponse:
         """Persist a completed cardio event."""
@@ -425,7 +545,7 @@ class CoachService:
                     workout_type=str(facts.get("workout_type", "Workout")),
                     duration_minutes=_optional_int(facts.get("duration_minutes")),
                     calories_burned=_optional_int(facts.get("calories_burned")),
-                    exercises=list(facts.get("exercises", [])),
+                    exercises=normalize_exercises(facts.get("exercises", [])),
                     proof_source=extraction.kind,
                     proof_confidence=extraction.confidence,
                     notes=notes,
@@ -438,7 +558,8 @@ class CoachService:
             baseline_lines = self._check_exercise_baselines(user_id, event.exercises)
             if baseline_lines:
                 message = f"{message}\n\n" + "\n".join(baseline_lines)
-            message = f"{message}\n\n{_workout_quality_review(event, history)}"
+            message = _append_review(message, _workout_quality_review(event, history, records))
+            message = _append_review(message, self._next_time_line(event, history))
             return CoachResponse(
                 message=message,
                 metadata={
@@ -568,6 +689,42 @@ class CoachService:
             metadata={"event_type": "daily_check_in"},
         )
 
+    def last_night_sleep_minutes(self, user_id: str, max_age_hours: int = 18) -> int | None:
+        """Duration from a sleep log made in the last ``max_age_hours``, else None.
+
+        The morning message is only built right after sleep is reported, so an older log is
+        deliberately not applied to today.
+        """
+
+        latest = self.sleep.recent(user_id, limit=1)
+        if not latest or latest[0].time_asleep_minutes is None:
+            return None
+        age = datetime.now(UTC) - _ensure_utc(latest[0].created_at)
+        return latest[0].time_asleep_minutes if age <= timedelta(hours=max_age_hours) else None
+
+    def build_review_metrics(self, user_id: str, now: datetime) -> dict[str, Any]:
+        """Assemble the deterministic metrics for the review window ending at ``now``."""
+
+        start = now - timedelta(days=self.settings.review_interval_days)
+        return build_progress_metrics(
+            workouts=self.workouts.between(user_id, start, now),
+            cardio_events=self.cardio.between(user_id, start, now),
+            nutrition_events=self.nutrition.between(user_id, start, now),
+            measurements=self.measurements.between(user_id, start, now),
+            sleep_events=self.sleep.between(user_id, start, now),
+            start=start,
+            end=now,
+            today=now.date(),
+            protein_goal_g=self.settings.protein_goal_g,
+            protein_adherence_threshold_g=self.settings.protein_adherence_threshold_g,
+            macro_goals={
+                "calories": self.settings.calorie_goal,
+                "protein": self.settings.protein_goal_g,
+                "carbs": self.settings.carbs_goal_g,
+                "fat": self.settings.fat_goal_g,
+            },
+        )
+
     def maybe_generate_review(
         self,
         user_id: str,
@@ -586,11 +743,7 @@ class CoachService:
         prompt = self.prompt_builder.build(user_id)
         explanation = self.openai.respond(
             system_prompt=prompt,
-            user_message=(
-                "Explain these deterministic progress-review metrics concisely. "
-                "Do not calculate new analytics.\n"
-                f"{metrics}"
-            ),
+            user_message=f"{_REVIEW_INSTRUCTIONS}\n{json.dumps(metrics, default=str)}",
         )
         return self.progress_reviews.add(
             models.ProgressReview(
@@ -752,75 +905,134 @@ def _format_workout_confirmation(event: models.WorkoutEvent) -> str:
     lines = [f"Logged: {header}"]
     for exercise in event.exercises:
         name = exercise.get("name", "Exercise")
-        set_strs = [
-            part
-            for exercise_set in exercise.get("sets", [])
-            if (part := _format_set(exercise_set.get("weight"), exercise_set.get("reps")))
-        ]
-        rendered = ", ".join(_collapse_repeats(set_strs))
+        rendered = _format_exercise_sets(exercise.get("sets"))
         lines.append(f"- {name}: {rendered}" if rendered else f"- {name}")
     return "\n".join(lines)
 
 
-def _workout_quality_review(
-    event: models.WorkoutEvent, history: list[models.WorkoutEvent]
-) -> str:
-    """Summarize today's workout using only its sets and existing workout history."""
+def _setfix_reply(message: str, *, updated: bool) -> CoachResponse:
+    return CoachResponse(
+        message=message,
+        metadata={"event_type": "set_type_updated" if updated else "set_type_unchanged"},
+    )
 
-    def top_performance(exercise: dict[str, Any]) -> float | None:
-        scores = []
-        for item in exercise.get("sets") or []:
-            weight = _optional_float(item.get("weight"))
-            reps = _optional_float(item.get("reps"))
-            if weight and reps and weight > 0 and reps > 0:
-                scores.append(weight * (1 + reps / 30))
-        return max(scores, default=None)
 
-    current = {
-        str(exercise.get("name", "")).strip().casefold(): top_performance(exercise)
-        for exercise in event.exercises
-        if str(exercise.get("name", "")).strip()
-    }
-    comparisons: list[float] = []
-    for name, score in current.items():
-        if score is None:
+def _exercise_name_matches(query: str, name: Any) -> bool:
+    """True when every word typed appears (as a word prefix) in the exercise name."""
+
+    name_words = re.findall(r"[a-z0-9]+", str(name or "").lower())
+    query_words = re.findall(r"[a-z0-9]+", query.lower())
+    return bool(query_words) and all(
+        any(word.startswith(typed) for word in name_words) for typed in query_words
+    )
+
+
+def _format_exercise_sets(sets: Any) -> str:
+    """Render sets compactly; warm-ups go in parentheses, lighter back-offs follow an arrow.
+
+    Only distinctions the user can act on are marked: a back-off at the same weight as the
+    top set is just another set, so plain straight-set logs read exactly as before.
+    """
+
+    if not isinstance(sets, list):
+        return ""
+    types = classify_sets(sets)
+    warmups: list[str] = []
+    main: list[str] = []
+    backoffs: list[str] = []
+    top_weight = max(
+        (
+            parse_number(item.get("weight")) or 0.0
+            for item, kind in zip(sets, types, strict=True)
+            if kind != SetType.WARMUP
+        ),
+        default=0.0,
+    )
+    lighter_started = False
+    for item, kind in zip(sets, types, strict=True):
+        part = _format_set(item.get("weight"), item.get("reps"))
+        if not part:
             continue
-        prior_scores = [
-            prior_score
-            for workout in history
+        if kind == SetType.WARMUP:
+            warmups.append(part)
+            continue
+        weight = parse_number(item.get("weight")) or 0.0
+        if kind == SetType.BACKOFF and 0 < weight < top_weight:
+            lighter_started = True
+        (backoffs if lighter_started else main).append(part)
+
+    segments = []
+    if warmups:
+        segments.append(f"({', '.join(_collapse_repeats(warmups))})")
+    if main:
+        segments.append(", ".join(_collapse_repeats(main)))
+    rendered = " ".join(segments)
+    if backoffs:
+        rendered = f"{rendered} → {', '.join(_collapse_repeats(backoffs))}".strip()
+    return rendered
+
+
+_QUALITY_CHANGE_THRESHOLD = 0.03
+"""A top set must move at least 3% (estimated max) against the recent median to be called."""
+
+
+def _append_review(message: str, review: str) -> str:
+    return f"{message}\n\n{review}" if review else message
+
+
+def _workout_quality_review(
+    event: models.WorkoutEvent,
+    history: list[models.WorkoutEvent],
+    records: Sequence[PersonalRecord] = (),
+) -> str:
+    """One grounded sentence about today's top working sets, or "" when there is nothing to say.
+
+    Warm-ups never count as the top set, the comparison uses the five most recent prior
+    sessions, and exercises already celebrated as PRs are not repeated. Rep-range
+    boilerplate is gone: silence beats a filler line.
+    """
+
+    celebrated = {record.exercise.strip().casefold() for record in records}
+    recent_first = sorted(
+        history, key=lambda workout: _ensure_utc(workout.occurred_at), reverse=True
+    )
+    changes: list[tuple[float, str]] = []
+    compared = 0
+    for exercise in event.exercises:
+        name = str(exercise.get("name", "")).strip()
+        today = top_working_set(exercise)
+        if not name or today is None or name.casefold() in celebrated:
+            continue
+        priors = [
+            top
+            for workout in recent_first
             for prior in workout.exercises
-            if str(prior.get("name", "")).strip().casefold() == name
-            and (prior_score := top_performance(prior)) is not None
+            if str(prior.get("name", "")).strip().casefold() == name.casefold()
+            and (top := top_working_set(prior)) is not None
         ][:5]
-        if len(prior_scores) >= 2:
-            prior_scores.sort()
-            comparisons.append(score / prior_scores[len(prior_scores) // 2] - 1)
+        if len(priors) < 2:
+            continue
+        compared += 1
+        scores = sorted(weight * (1 + reps / 30) for weight, reps in priors)
+        change = today[0] * (1 + today[1] / 30) / scores[len(scores) // 2] - 1
+        if abs(change) < _QUALITY_CHANGE_THRESHOLD:
+            continue
+        last_weight, last_reps = priors[0]
+        direction = "up" if change > 0 else "down"
+        changes.append(
+            (
+                abs(change),
+                f"{name}: top set {_format_set(today[0], today[1])}, {direction} from "
+                f"{_format_set(last_weight, last_reps)} last session.",
+            )
+        )
+    if changes:
+        changes.sort(key=lambda item: item[0], reverse=True)
+        return " ".join(text for _, text in changes[:2])
+    if compared:
+        return "Top sets held steady versus your recent sessions."
+    return ""
 
-    sets = [
-        item
-        for exercise in event.exercises
-        for item in (exercise.get("sets") or [])
-        if _optional_float(item.get("reps")) and _optional_float(item.get("reps")) > 0
-    ]
-    productive = sum(1 for item in sets if 6 <= _optional_float(item.get("reps")) <= 15)
-    set_count = len(sets)
-    if comparisons:
-        avg_change = sum(comparisons) / len(comparisons)
-        if avg_change >= 0.03:
-            performance = "performance was above your recent baseline"
-        elif avg_change <= -0.03:
-            performance = "performance was a little below your recent baseline"
-        else:
-            performance = "performance held around your recent baseline"
-        if set_count and productive / set_count >= 0.6:
-            return f"{performance.capitalize()}, with most sets in a productive rep range."
-        return f"{performance.capitalize()} across the lifts with enough history to compare."
-
-    if set_count >= 6 and productive / set_count >= 0.5:
-        return "Solid session overall based on the load, reps, and volume logged; most sets fell in a productive rep range."
-    if set_count:
-        return "Solid session overall based on the load, reps, and volume logged."
-    return "Workout logged; there were not enough set details to judge the session quality."
 
 
 def _format_cardio_confirmation(event: models.CardioEvent) -> str:

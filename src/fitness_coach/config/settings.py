@@ -40,6 +40,15 @@ class CoachSettings(BaseSettings):
     external_research_enabled: bool = True
     external_research_timeout_seconds: float = 8.0
     max_tool_rounds: int = 4
+    # Progression guidance. Defaults live in analytics/progression.py; these only override.
+    # rep_targets: {"lateral raise": {"top": [12, 20], "backoff": [12, 20]}}
+    rep_targets: dict[str, dict[str, list[int]]] = Field(default_factory=dict)
+    # equipment_increments: {"dumbbell": 5}  (pounds per step, by barbell/dumbbell/machine/cable)
+    equipment_increments: dict[str, float] = Field(default_factory=dict)
+    hits_to_progress: int = 2
+    # Sleep tiers for the morning message: normal >= first, usable >= second, else low.
+    sleep_normal_minutes: int = 420
+    sleep_low_minutes: int = 360
 
 
 class AppSettings(BaseSettings):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict
 from datetime import date, datetime
 from typing import Any
@@ -13,14 +13,19 @@ from fitness_coach.analytics.measurements import MeasurementLike, summarize_meas
 from fitness_coach.analytics.nutrition import (
     NutritionLike,
     average_nutrition,
-    calorie_goal_adherence,
-    carbs_goal_adherence,
-    fat_goal_adherence,
+    average_nutrition_logged_days,
+    macro_goal_days,
     missing_nutrition_days,
     protein_goal_adherence,
+    protein_goal_days,
 )
+from fitness_coach.analytics.progression import review_highlights, top_set_trends
 from fitness_coach.analytics.sleep import SleepLike, summarize_sleep
-from fitness_coach.analytics.strength import WorkoutLike, sessions_by_type, volume_by_exercise
+from fitness_coach.analytics.strength import (
+    WorkoutLike,
+    sessions_by_type,
+    working_volume_by_exercise,
+)
 
 
 def build_progress_metrics(
@@ -29,17 +34,20 @@ def build_progress_metrics(
     cardio_events: Iterable[CardioLike],
     nutrition_events: Iterable[NutritionLike],
     measurements: Iterable[MeasurementLike],
-    sleep_events: Iterable[SleepLike],
     start: datetime,
     end: datetime,
     today: date,
     protein_goal_g: float,
     protein_adherence_threshold_g: float,
-    carbs_goal_g: float,
-    fat_goal_g: float,
-    calorie_goal: float,
+    sleep_events: Iterable[SleepLike] = (),
+    macro_goals: Mapping[str, float] | None = None,
 ) -> dict[str, Any]:
-    """Build deterministic review metrics from event data."""
+    """Build deterministic review metrics from event data.
+
+    ``workouts.volume_by_exercise`` counts working sets only. Nutrition rates keep the
+    calendar-day policy (an unlogged day counts against the rate) and sit next to explicit
+    coverage and logged-day figures so a low number can be told apart from not logging.
+    """
 
     workout_list = list(workouts)
     cardio_list = list(cardio_events)
@@ -47,12 +55,20 @@ def build_progress_metrics(
     measurement_list = list(measurements)
     sleep_list = list(sleep_events)
     active_dates = unique_event_dates([*workout_list, *cardio_list])
-    nutrition_averages = average_nutrition(nutrition_list, start, end)
+    nutrition_block = _nutrition_block(
+        nutrition_list,
+        start,
+        end,
+        protein_goal_g=protein_goal_g,
+        protein_adherence_threshold_g=protein_adherence_threshold_g,
+        macro_goals=macro_goals,
+    )
 
     return {
         "period": {
             "start": start.isoformat(),
             "end": end.isoformat(),
+            "days": (end.date() - start.date()).days + 1,
         },
         "adherence": {
             "current_activity_streak_days": current_streak(active_dates, today),
@@ -61,24 +77,43 @@ def build_progress_metrics(
         "workouts": {
             "sessions": len(workout_list),
             "sessions_by_type": sessions_by_type(workout_list),
-            "volume_by_exercise": volume_by_exercise(workout_list),
+            "volume_by_exercise": working_volume_by_exercise(workout_list),
+            "highlights": review_highlights(top_set_trends(workout_list)),
         },
         "cardio": asdict(summarize_cardio(cardio_list)),
-        "nutrition": {
-            "averages": asdict(nutrition_averages),
-            "protein_goal_adherence": protein_goal_adherence(
-                nutrition_list, protein_goal_g, start, end
-            ),
-            "protein_adherence_rate": protein_goal_adherence(
-                nutrition_list, protein_adherence_threshold_g, start, end
-            ),
-            "carbs_goal_adherence": carbs_goal_adherence(nutrition_list, carbs_goal_g, start, end),
-            "fat_goal_adherence": fat_goal_adherence(nutrition_list, fat_goal_g, start, end),
-            "calorie_goal_adherence": calorie_goal_adherence(
-                nutrition_list, calorie_goal, start, end
-            ),
-            "missing_days": missing_nutrition_days(nutrition_list, start, end),
-        },
+        "nutrition": nutrition_block,
         "measurements": asdict(summarize_measurements(measurement_list)),
         "sleep": asdict(summarize_sleep(sleep_list, start, end)),
     }
+
+
+def _nutrition_block(
+    events: list[NutritionLike],
+    start: datetime,
+    end: datetime,
+    *,
+    protein_goal_g: float,
+    protein_adherence_threshold_g: float,
+    macro_goals: Mapping[str, float] | None,
+) -> dict[str, Any]:
+    total_days = (end.date() - start.date()).days + 1
+    missing = missing_nutrition_days(events, start, end)
+    logged = total_days - missing
+    block: dict[str, Any] = {
+        "days_logged": logged,
+        "missing_days": missing,
+        "coverage": logged / total_days if total_days > 0 else 0.0,
+        "averages": asdict(average_nutrition(events, start, end)),
+        "averages_logged_days": asdict(average_nutrition_logged_days(events, start, end)),
+        "protein_goal_met_days": protein_goal_days(events, protein_goal_g, start, end),
+        "protein_near_goal_days": protein_goal_days(
+            events, protein_adherence_threshold_g, start, end
+        ),
+        "protein_goal_met_rate": protein_goal_adherence(events, protein_goal_g, start, end),
+        "protein_near_goal_rate": protein_goal_adherence(
+            events, protein_adherence_threshold_g, start, end
+        ),
+    }
+    if macro_goals:
+        block["macro_goal_days"] = macro_goal_days(events, macro_goals, start, end)
+    return block

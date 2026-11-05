@@ -14,13 +14,11 @@ import discord
 from discord.ext import commands
 
 from fitness_coach.analytics.charts import build_progress_charts
-from fitness_coach.analytics.reports import build_progress_metrics
 from fitness_coach.coach.factory import ServiceFactory
 from fitness_coach.coach.service import AnalyticsLockedError
 from fitness_coach.config.settings import get_app_settings, get_coach_settings
 from fitness_coach.database.repositories import (
     CardioEventRepository,
-    MeasurementEventRepository,
     NutritionEventRepository,
     ProgressReviewRepository,
     SleepEventRepository,
@@ -145,6 +143,16 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
         finally:
             for path in saved_paths:
                 path.unlink(missing_ok=True)
+        await ctx.reply(response.message)
+
+    @bot.command(name="setfix")
+    async def setfix(ctx: commands.Context[commands.Bot], *, args: str = "") -> None:
+        """Re-tag sets in your last workout, e.g. `!setfix press 1-2 warmup`."""
+
+        with factory.session() as session:
+            coach = factory.coach_service(session)
+            user = coach.get_user(str(ctx.author.id))
+            response = coach.reclassify_sets(user.id, args)
         await ctx.reply(response.message)
 
     @bot.command(name="cardio")
@@ -350,27 +358,7 @@ def build_bot(factory: ServiceFactory) -> commands.Bot:
                 )
                 return
 
-            start = now - timedelta(days=factory.coach_settings.review_interval_days)
-            workouts = WorkoutEventRepository(session).between(user.id, start, now)
-            cardio = CardioEventRepository(session).between(user.id, start, now)
-            nutrition = NutritionEventRepository(session).between(user.id, start, now)
-            measurements = MeasurementEventRepository(session).between(user.id, start, now)
-            sleep = SleepEventRepository(session).between(user.id, start, now)
-            metrics = build_progress_metrics(
-                workouts=workouts,
-                cardio_events=cardio,
-                nutrition_events=nutrition,
-                measurements=measurements,
-                sleep_events=sleep,
-                start=start,
-                end=now,
-                today=now.date(),
-                protein_goal_g=factory.coach_settings.protein_goal_g,
-                protein_adherence_threshold_g=factory.coach_settings.protein_adherence_threshold_g,
-                carbs_goal_g=factory.coach_settings.carbs_goal_g,
-                fat_goal_g=factory.coach_settings.fat_goal_g,
-                calorie_goal=factory.coach_settings.calorie_goal,
-            )
+            metrics = coach.build_review_metrics(user.id, now)
             review = coach.maybe_generate_review(user.id, metrics, now)
         if review is None:
             await ctx.reply("No progress review is available right now.")

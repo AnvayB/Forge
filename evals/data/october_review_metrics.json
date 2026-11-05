@@ -1,0 +1,35 @@
+{
+  "period": {"start": "2026-10-06T00:00:00+00:00", "end": "2026-11-05T00:00:00+00:00", "days": 31},
+  "adherence": {"current_activity_streak_days": 1, "activity_completion_rate": 0.355},
+  "workouts": {
+    "sessions": 11,
+    "sessions_by_type": {"Chest & Back": 4, "Upper": 3, "Legs": 2, "Arms": 1, "Freestyle": 1},
+    "volume_by_exercise": {
+      "lat pulldown machine": 11860,
+      "dumbbell chest press": 11030,
+      "high row machine": 10190
+    },
+    "highlights": {"progress": [], "stalled": []}
+  },
+  "cardio": {"sessions": 3, "total_minutes": 41, "total_distance_miles": 1.04, "average_minutes": 13.7},
+  "nutrition": {
+    "days_logged": 14,
+    "missing_days": 17,
+    "coverage": 0.452,
+    "protein_goal_met_days": 2,
+    "protein_near_goal_days": 8,
+    "protein_goal_met_rate": 0.065,
+    "protein_near_goal_rate": 0.258,
+    "macro_goal_days": {"calories": 3, "protein": 2, "carbs": 2, "fat": 6}
+  },
+  "sleep": {
+    "nights_logged": 4,
+    "logging_rate": 0.129,
+    "average_time_asleep_minutes": 450,
+    "average_regularity_percent": null,
+    "average_sleep_latency_minutes": null,
+    "nights_under_six_hours": 0,
+    "mood_counts": {}
+  },
+  "measurements": {"entries": 1, "photos_logged": 1}
+}

@@ -181,3 +181,98 @@ def test_unknown_tool_and_bad_args_are_reported_not_raised(toolkit) -> None:
     kit, _, _ = toolkit
     assert "Unknown tool" in kit.dispatch("does_not_exist", "{}")
     assert "Bad arguments" in kit.dispatch("get_exercise_history", {"nope": 1})
+
+
+def _add_cable_row_sessions(kit, user, *, weeks_ago: tuple[int, ...]) -> None:
+    for weeks in weeks_ago:
+        kit.workouts.add(
+            models.WorkoutEvent(
+                user_id=user.id,
+                occurred_at=NOW - timedelta(weeks=weeks),
+                workout_type="Pull",
+                exercises=[
+                    {
+                        "name": "Seated Cable Row",
+                        "sets": [
+                            {"weight": 20, "reps": 12},
+                            {"weight": 30, "reps": 8},
+                            {"weight": 50, "reps": 6},
+                            {"weight": 45, "reps": 8},
+                        ],
+                    }
+                ],
+            )
+        )
+
+
+def test_exercise_history_excludes_warmups_and_suggests_the_next_step(toolkit) -> None:
+    kit, session, user = toolkit
+    _add_cable_row_sessions(kit, user, weeks_ago=(2, 1))
+    session.flush()
+
+    payload = json.loads(kit.dispatch("get_exercise_history", {"exercise_name": "cable row"}))
+
+    row = payload["exercises"][0]
+    assert row["derived"]["last_top_set"] == {"weight": 50, "reps": 6}
+    newest = row["raw"]["sessions"][-1]["sets"]
+    assert [item.get("set_type") for item in newest] == ["warmup", "warmup", None, None]
+    assert row["derived"]["suggestion"]["action"] == "add_reps"
+    assert (row["derived"]["suggestion"]["weight"], row["derived"]["suggestion"]["reps"]) == (50, 7)
+
+
+def test_exercise_history_for_a_single_session_asks_for_a_ramp_not_a_number(toolkit) -> None:
+    kit, session, user = toolkit
+    _add_cable_row_sessions(kit, user, weeks_ago=(1,))
+    session.flush()
+
+    payload = json.loads(kit.dispatch("get_exercise_history", {"exercise_name": "cable row"}))
+
+    suggestion = payload["exercises"][0]["derived"]["suggestion"]
+    assert suggestion["action"] == "find_working_weight"
+    assert suggestion["weight"] is None
+
+
+def test_stall_detection_is_unchanged_and_now_comes_with_a_rep_first_suggestion(toolkit) -> None:
+    kit, _, _ = toolkit
+
+    derived = json.loads(kit.dispatch("get_exercise_history", {"exercise_name": "bench"}))[
+        "exercises"
+    ][0]["derived"]
+
+    assert derived["stalled"] is True
+    assert derived["suggestion"]["action"] == "add_reps"
+    assert derived["suggestion"]["reps"] == 6
+
+
+def test_todays_plan_carries_last_top_set_and_a_suggestion_for_logged_exercises(toolkit) -> None:
+    kit, _, _ = toolkit
+
+    plan = json.loads(kit.dispatch("get_todays_plan", {}))
+
+    hints = {hint["plan_item"].lower(): hint for hint in plan["progress_hints"]}
+    pulldown = hints["lat pulldown"]
+    assert pulldown["last_top_set"] == {"weight": 120, "reps": 10}
+    assert pulldown["suggestion"]["action"] == "increase_weight"
+    assert pulldown["suggestion"]["weight"] == 125
+    assert "shoulder press" not in hints  # never logged, so no hint rather than a guess
+
+
+def test_a_rep_target_override_in_coach_settings_yaml_changes_the_suggestion(
+    toolkit, tmp_path: Path
+) -> None:
+    from fitness_coach.config.settings import load_coach_settings
+
+    kit, session, user = toolkit
+    _add_cable_row_sessions(kit, user, weeks_ago=(2, 1))  # top set 50x6 twice
+    session.flush()
+    (tmp_path / "coach_settings.yaml").write_text(
+        "rep_targets:\n  cable row:\n    top: [3, 6]\n    backoff: [5, 8]\nhits_to_progress: 2\n",
+        encoding="utf-8",
+    )
+    kit.settings = load_coach_settings(tmp_path)
+
+    payload = json.loads(kit.dispatch("get_exercise_history", {"exercise_name": "cable row"}))
+
+    suggestion = payload["exercises"][0]["derived"]["suggestion"]
+    assert suggestion["action"] == "increase_weight"  # 6 reps is now the top of the range
+    assert suggestion["weight"] == 55

@@ -233,3 +233,104 @@ def test_free_text_handler_replies_when_service_raises(factory: ServiceFactory) 
 
     assert message.replies == ["Something went wrong processing that message."]
     asyncio.run(bot.close())
+
+
+def _log_press_session(factory: ServiceFactory) -> str:
+    """Log one session where set 1 (40x5) is a real working set the user may re-tag."""
+
+    extraction = VisionExtraction(
+        kind=ImageKind.WORKOUT_TEXT,
+        confidence=0.95,
+        needs_clarification=False,
+        facts={
+            "workout_type": "Upper",
+            "exercises": [
+                {
+                    "name": "Incline Dumbbell Press",
+                    "sets": [{"weight": 40, "reps": 5}, {"weight": 40, "reps": 8}],
+                },
+                {"name": "Lat Pulldown", "sets": [{"weight": 100, "reps": 10}]},
+            ],
+        },
+        retained_path=None,
+    )
+    with factory.session() as session:
+        coach = factory.coach_service(session)
+        user = coach.get_user("1234")
+        coach.store_vision_extraction(user.id, extraction)
+        return user.id
+
+
+def _run_setfix(factory: ServiceFactory, args: str) -> str:
+    bot = build_bot(factory)
+    ctx = _Context()
+    asyncio.run(bot.get_command("setfix").callback(ctx, args=args))
+    asyncio.run(bot.close())
+    assert len(ctx.replies) == 1, "setfix must answer with exactly one message"
+    return ctx.replies[0]
+
+
+def _stored_sets(factory: ServiceFactory, user_id: str, exercise_index: int = 0) -> list[dict]:
+    with factory.session() as session:
+        latest = WorkoutEventRepository(session).recent(user_id)[0]
+        return [dict(item) for item in latest.exercises[exercise_index]["sets"]]
+
+
+def test_setfix_retags_sets_in_the_latest_workout_and_persists(factory: ServiceFactory) -> None:
+    user_id = _log_press_session(factory)
+
+    reply = _run_setfix(factory, "incline press 1 warmup")
+
+    assert "Incline Dumbbell Press: (40lbs x5) 40lbs x8" in reply
+    assert _stored_sets(factory, user_id)[0]["set_type"] == "warmup"
+    assert "set_type" not in _stored_sets(factory, user_id)[1]
+
+
+def test_setfix_accepts_ranges_and_short_type_names(factory: ServiceFactory) -> None:
+    user_id = _log_press_session(factory)
+
+    _run_setfix(factory, "incline press 1-2 bo")
+
+    assert [item["set_type"] for item in _stored_sets(factory, user_id)] == ["backoff", "backoff"]
+
+
+def test_setfix_changes_working_volume_but_not_what_was_logged(factory: ServiceFactory) -> None:
+    from fitness_coach.analytics.strength import exercise_volume, working_volume
+
+    user_id = _log_press_session(factory)
+    _run_setfix(factory, "incline press 1 warmup")
+
+    with factory.session() as session:
+        exercise = WorkoutEventRepository(session).recent(user_id)[0].exercises[0]
+        assert exercise_volume(exercise) == 40 * 5 + 40 * 8
+        assert working_volume(exercise) == 40 * 8
+        assert [(s["weight"], s["reps"]) for s in exercise["sets"]] == [(40, 5), (40, 8)]
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        "incline press 9 warmup",
+        "incline press 0 warmup",
+        "incline press 1 dropset",
+        "squat 1 warmup",
+        "incline press",
+        "",
+    ],
+)
+def test_setfix_bad_input_gets_one_line_and_changes_nothing(
+    factory: ServiceFactory, args: str
+) -> None:
+    user_id = _log_press_session(factory)
+    before = _stored_sets(factory, user_id)
+
+    reply = _run_setfix(factory, args)
+
+    assert "\n" not in reply.strip()
+    assert _stored_sets(factory, user_id) == before
+
+
+def test_setfix_with_no_logged_workout_says_so(factory: ServiceFactory) -> None:
+    reply = _run_setfix(factory, "incline press 1 warmup")
+
+    assert "no workout" in reply.lower()
