@@ -77,7 +77,7 @@ def test_review_metrics_cover_sleep_highlights_and_macro_goals_from_settings(
         metrics = coach.build_review_metrics(user.id, NOW)
 
     assert metrics["sleep"]["nights_logged"] == 1
-    assert metrics["sleep"]["average_minutes_asleep"] == 385
+    assert metrics["sleep"]["average_time_asleep_minutes"] == 385
     assert metrics["workouts"]["highlights"]["progress"][0]["exercise"] == "Dumbbell Press"
     assert metrics["workouts"]["volume_by_exercise"] == {"dumbbell press": 60 * 8 + 65 * 8 + 70 * 8}
     assert metrics["nutrition"]["macro_goal_days"]["protein"] == 1

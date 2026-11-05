@@ -25,8 +25,11 @@
   "sleep": {
     "nights_logged": 4,
     "logging_rate": 0.129,
-    "average_minutes_asleep": 450,
-    "nights_under_6h": 0
+    "average_time_asleep_minutes": 450,
+    "average_regularity_percent": null,
+    "average_sleep_latency_minutes": null,
+    "nights_under_six_hours": 0,
+    "mood_counts": {}
   },
   "measurements": {"entries": 1, "photos_logged": 1}
 }

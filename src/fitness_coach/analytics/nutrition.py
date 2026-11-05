@@ -58,13 +58,14 @@ def average_nutrition(
     )
 
 
-def protein_goal_adherence(
+def _goal_adherence_rate(
     events: Iterable[NutritionLike],
-    protein_goal_g: float,
+    field: str,
+    goal: float,
     start: datetime,
     end: datetime,
 ) -> float:
-    """Return the share of days in the period that met the protein goal.
+    """Share of days in the period whose logged value for `field` met `goal`.
 
     Days without a nutrition log count against adherence rather than being
     excluded, since an unlogged day is assumed to be well below goal.
@@ -78,9 +79,53 @@ def protein_goal_adherence(
     met_days = {
         event.logged_for.date()
         for event in events
-        if start.date() <= event.logged_for.date() <= end.date() and event.protein_g >= protein_goal_g
+        if start.date() <= event.logged_for.date() <= end.date() and getattr(event, field) >= goal
     }
     return len(met_days) / total_days
+
+
+def protein_goal_adherence(
+    events: Iterable[NutritionLike],
+    protein_goal_g: float,
+    start: datetime,
+    end: datetime,
+) -> float:
+    """Return the share of days in the period that met the protein goal."""
+
+    return _goal_adherence_rate(events, "protein_g", protein_goal_g, start, end)
+
+
+def carbs_goal_adherence(
+    events: Iterable[NutritionLike],
+    carbs_goal_g: float,
+    start: datetime,
+    end: datetime,
+) -> float:
+    """Return the share of days in the period that met the carb goal."""
+
+    return _goal_adherence_rate(events, "carbs_g", carbs_goal_g, start, end)
+
+
+def fat_goal_adherence(
+    events: Iterable[NutritionLike],
+    fat_goal_g: float,
+    start: datetime,
+    end: datetime,
+) -> float:
+    """Return the share of days in the period that met the fat goal."""
+
+    return _goal_adherence_rate(events, "fat_g", fat_goal_g, start, end)
+
+
+def calorie_goal_adherence(
+    events: Iterable[NutritionLike],
+    calorie_goal: float,
+    start: datetime,
+    end: datetime,
+) -> float:
+    """Return the share of days in the period that met the calorie goal."""
+
+    return _goal_adherence_rate(events, "calories", calorie_goal, start, end)
 
 
 def missing_nutrition_days(

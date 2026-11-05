@@ -53,6 +53,7 @@ def build_progress_metrics(
     cardio_list = list(cardio_events)
     nutrition_list = list(nutrition_events)
     measurement_list = list(measurements)
+    sleep_list = list(sleep_events)
     active_dates = unique_event_dates([*workout_list, *cardio_list])
     nutrition_block = _nutrition_block(
         nutrition_list,
@@ -81,8 +82,8 @@ def build_progress_metrics(
         },
         "cardio": asdict(summarize_cardio(cardio_list)),
         "nutrition": nutrition_block,
-        "sleep": summarize_sleep(sleep_events, start, end),
         "measurements": asdict(summarize_measurements(measurement_list)),
+        "sleep": asdict(summarize_sleep(sleep_list, start, end)),
     }
 
 

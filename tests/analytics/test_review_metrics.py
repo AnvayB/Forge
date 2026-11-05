@@ -35,6 +35,9 @@ class Nutrition:
 class Sleep:
     logged_for: datetime
     time_asleep_minutes: int | None
+    regularity_percent: float | None = None
+    sleep_latency_minutes: int | None = None
+    wake_up_mood: str | None = None
 
 
 @dataclass
@@ -104,8 +107,8 @@ def test_sleep_block_counts_only_nights_with_a_duration() -> None:
 
     assert block["nights_logged"] == 3
     assert block["logging_rate"] == 0.3
-    assert block["average_minutes_asleep"] == 420
-    assert block["nights_under_6h"] == 1
+    assert block["average_time_asleep_minutes"] == 420
+    assert block["nights_under_six_hours"] == 1
 
 
 def test_sleep_block_with_no_logs_does_not_invent_numbers() -> None:
@@ -114,8 +117,11 @@ def test_sleep_block_with_no_logs_does_not_invent_numbers() -> None:
     assert block == {
         "nights_logged": 0,
         "logging_rate": 0.0,
-        "average_minutes_asleep": None,
-        "nights_under_6h": 0,
+        "average_time_asleep_minutes": None,
+        "average_regularity_percent": None,
+        "average_sleep_latency_minutes": None,
+        "nights_under_six_hours": 0,
+        "mood_counts": {},
     }
 
 
