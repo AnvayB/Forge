@@ -35,6 +35,17 @@ _VALID_IMAGE_KINDS = {
     ImageKind.PROGRESS_PHOTO,
 }
 
+_SIDE_INSTRUCTION = (
+    " When the app lists a set as separate right and left rows (e.g. an R row and an L "
+    'row), keep each row as its own set and add `side` ("R" or "L") to it.'
+)
+_SET_TYPE_INSTRUCTION = (
+    " If the user explicitly labels a set as a warm-up or a back-off (e.g. 'w', 'warm-up', "
+    "'bo', 'back-off'), add `set_type` to that set as `warmup` or `backoff` (use `working` "
+    "only if they call it a working/top set). Add `set_type` only when the user stated it - "
+    "never infer it yourself."
+)
+
 _AUTO_DETECT_TASK = (
     "Identify what kind of fitness/nutrition screenshot this is, then extract structured "
     "facts from it. Return JSON with keys `kind`, `confidence`, `needs_clarification`, and "
@@ -44,7 +55,8 @@ _AUTO_DETECT_TASK = (
     "- workout_screenshot (e.g. Arrow, Apple Fitness strength training): `workout_type`, "
     "`duration_minutes`, `calories_burned`, `exercises` (a list of objects with `name` and "
     "`sets`, where `sets` is a list of objects with `weight` and `reps` as plain numbers, "
-    "no unit text).\n"
+    "no unit text). If the app lists right and left rows for a set, keep each row and add "
+    '`side` ("R" or "L").\n'
     "- cardio_screenshot (e.g. treadmill, Garmin run): `modality`, `duration_minutes`, "
     "`distance_miles`, `calories_burned`, `average_heart_rate`, `incline`, `speed_mph`.\n"
     "- nutrition_screenshot (e.g. MyFitnessPal 'Nutrients Remaining' widget, which shows "
@@ -331,6 +343,7 @@ class VisionProcessor:
             "with `name` and `sets`, where `sets` is a list of objects with `weight` and "
             "`reps`) into `facts`, using only what the user actually stated. `weight` and "
             "`reps` must be plain numbers with no unit text (30, not '30 lbs' or '30lbs')."
+            + _SET_TYPE_INSTRUCTION
         )
         result = self.openai.analyze_text(system_prompt=prompt, task=task, text=text)
         extraction = self._parse_extraction_result(result)
@@ -408,6 +421,7 @@ class VisionProcessor:
                 "Legs') rather than picking just one. `weight` and `reps` must be plain "
                 "numbers with no unit text (30, not '30 lbs' or '30lbs'). Only include "
                 "fields you can actually read from an image."
+                + _SIDE_INSTRUCTION
             )
         if extra_notes:
             task += f" The user also provided this note: {extra_notes!r}."

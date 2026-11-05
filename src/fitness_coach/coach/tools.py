@@ -20,10 +20,12 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from fitness_coach.analytics.progression import Suggestion, suggest_next
+from fitness_coach.analytics.sets import SetType, classify_sets, explicit_set_type
 from fitness_coach.analytics.strength import (
     _one_rep_max_estimate,
-    best_set_among,
     judge_against_baseline,
+    top_working_set,
 )
 from fitness_coach.config.settings import CoachSettings
 from fitness_coach.database import models
@@ -67,6 +69,29 @@ _EXERCISE_ALIASES: dict[str, tuple[str, ...]] = {
     "lat raise": ("lateral raise",),
     "lat raises": ("lateral raise",),
 }
+
+
+def _raw_sets(exercise: dict[str, Any]) -> list[dict[str, Any]]:
+    """Sets as logged, plus a ``set_type`` only where it carries information.
+
+    Warm-ups (inferred or tagged) and explicit user tags are shown; the default working
+    sets stay bare so ordinary logs read exactly as they were recorded.
+    """
+
+    raw = exercise.get("sets")
+    sets = [s for s in raw if isinstance(s, dict)] if isinstance(raw, list) else []
+    out: list[dict[str, Any]] = []
+    for item, inferred in zip(sets, classify_sets(sets), strict=True):
+        entry: dict[str, Any] = {"weight": item.get("weight"), "reps": item.get("reps")}
+        if "sides" in item:
+            entry["sides"] = item["sides"]
+        explicit = explicit_set_type(item)
+        if inferred == SetType.WARMUP:
+            entry["set_type"] = SetType.WARMUP.value
+        elif explicit is not None:
+            entry["set_type"] = explicit.value
+        out.append(entry)
+    return out
 
 
 def _normalize(name: str) -> str:
@@ -457,17 +482,15 @@ class CoachToolkit:
         workouts = sorted(self.workouts.between(self._uid, start, end), key=lambda e: e.occurred_at)
 
         matched: dict[str, list[dict[str, Any]]] = {}
+        raw_exercises: dict[str, list[dict[str, Any]]] = {}
         for workout in workouts:
             for exercise in workout.exercises or []:
                 name = str(exercise.get("name", "")).strip()
                 if not name or not _exercise_matches(exercise_name, name):
                     continue
-                sets = [
-                    {"weight": s.get("weight"), "reps": s.get("reps")}
-                    for s in (exercise.get("sets") or [])
-                    if isinstance(s, dict)
-                ]
-                best = best_set_among([exercise]).get(name.lower())
+                sets = _raw_sets(exercise)
+                best = top_working_set(exercise)
+                raw_exercises.setdefault(name, []).append(exercise)
                 matched.setdefault(name, []).append(
                     {
                         "date": _iso(workout.occurred_at),
@@ -522,6 +545,7 @@ class CoachToolkit:
                         "stalled": non_improving >= _STALL_SESSIONS,
                         "last_improvement_date": last_pr_date,
                         "baseline": baseline_out,
+                        "suggestion": self._suggestion(name, list(reversed(raw_exercises[name]))),
                     },
                 }
             )
@@ -531,8 +555,10 @@ class CoachToolkit:
             "window_days": days,
             "exercises": exercises_out,
             "note": (
-                "raw = sets exactly as logged; derived = deterministic (Epley 1RM, stall = "
-                f"{_STALL_SESSIONS}+ consecutive sessions without a new best). No interpretation."
+                "raw = sets exactly as logged (set_type marks warm-ups, which never count as the "
+                "top set); derived = deterministic (Epley 1RM for ranking only, stall = "
+                f"{_STALL_SESSIONS}+ consecutive sessions without a new best, suggestion = "
+                "double progression). Suggestions are optional guidance, never a requirement."
                 if exercises_out
                 else "No sessions matched this exercise in the window."
             ),
@@ -598,7 +624,59 @@ class CoachToolkit:
                 for o in overrides
             ],
             "last_logged_workout": last_workout,
+            "progress_hints": self._progress_hints(exercises, target),
         }
+
+    def _suggestion(self, name: str, sessions_newest_first: list[dict[str, Any]]) -> dict[str, Any]:
+        suggestion: Suggestion = suggest_next(
+            name,
+            sessions_newest_first,
+            rep_targets=self.settings.rep_targets,
+            increments=self.settings.equipment_increments,
+            hits_to_progress=self.settings.hits_to_progress,
+        )
+        return {
+            "action": suggestion.action.value,
+            "weight": suggestion.weight,
+            "reps": suggestion.reps,
+            "message": suggestion.message,
+        }
+
+    def _progress_hints(self, plan_items: list[str], target: date) -> list[dict[str, Any]]:
+        """For plan items the user has logged before: last top set plus a suggested step."""
+
+        end = datetime.combine(target, datetime.max.time(), tzinfo=UTC)
+        start = end - timedelta(days=_MAX_HISTORY_DAYS)
+        newest_first = sorted(
+            self.workouts.between(self._uid, start, end),
+            key=lambda workout: workout.occurred_at,
+            reverse=True,
+        )
+        logged: dict[str, list[dict[str, Any]]] = {}
+        for workout in newest_first:
+            for exercise in workout.exercises or []:
+                name = str(exercise.get("name", "")).strip()
+                if name:
+                    logged.setdefault(name, []).append(exercise)
+
+        hints: list[dict[str, Any]] = []
+        for item in plan_items:
+            for name, sessions in logged.items():
+                if not (_exercise_matches(name, item) or _exercise_matches(item, name)):
+                    continue
+                top = next((t for s in sessions if (t := top_working_set(s)) is not None), None)
+                if top is None:
+                    continue
+                hints.append(
+                    {
+                        "plan_item": item,
+                        "logged_as": name,
+                        "last_top_set": {"weight": top[0], "reps": top[1]},
+                        "suggestion": self._suggestion(name, sessions),
+                    }
+                )
+                break
+        return hints
 
     def get_nutrition_targets(self) -> dict[str, Any]:
         today = self._today()
