@@ -11,7 +11,11 @@ MACHINE-SCORED (deterministic, no model needed)
 
 JUDGMENT-REQUIRED (model or human grader, rubric per scenario)
   factual_correctness, personalization, correct_use_of_history, evidence_quality,
-  actionable_advice, plus any scenario-specific rubric keys.
+  actionable_advice, specificity, no_invented_problems, plus any scenario-specific rubric
+  keys.
+
+REVIEW QUALITY (deterministic, for the 30-day review narrative)
+  score_review: within_word_limit, no_boilerplate, grounded_numbers, no_failure_push
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ from typing import Any
 
 import yaml
 
+from fitness_coach.coach.service import REVIEW_WORD_LIMIT
 from fitness_coach.research.engine import EXTERNAL_LABEL
 from fitness_coach.routing.classifier import RoutingDecision
 
@@ -103,6 +108,8 @@ JUDGMENT_DIMENSIONS = (
     "correct_use_of_history",
     "evidence_quality",
     "actionable_advice",
+    "specificity",
+    "no_invented_problems",
 )
 
 _URL = re.compile(r"https?://\S+")
@@ -238,6 +245,14 @@ def judgment_rubric(scenario: Scenario) -> dict[str, str]:
             "Confidence matches evidence strength; no fake precision; conflicts surfaced honestly."
         ),
         "actionable_advice": "Ends with one clear, practical next step (or one targeted question).",
+        "specificity": (
+            "Names the few things the user's own data supports (1-3), instead of generic "
+            "encouragement, restated metrics, or commentary on everything."
+        ),
+        "no_invented_problems": (
+            "Recommends a change only when the data supports it; says plainly when the current "
+            "approach is working; does not manufacture criticism to have something to say."
+        ),
     }
     rubric.update(scenario.judgment)
     return rubric
@@ -282,4 +297,78 @@ def summarize(check_rows: list[dict[str, bool]]) -> dict[str, dict[str, int | fl
     return {
         key: {"passed": sum(vals), "total": len(vals), "rate": round(sum(vals) / len(vals), 3)}
         for key, vals in sorted(totals.items())
+    }
+
+
+# --- review quality (deterministic) --------------------------------------------------
+
+REVIEW_BOILERPLATE = (
+    "interpretation:",
+    "depending on the system",
+    "system's cutoff",
+    "system\u2019s cutoff",
+    "higher numbers do not automatically",
+    "everything listed is based only",
+    "great job",
+    "keep up the",
+)
+
+FAILURE_PUSH_PHRASES = ("to failure", "max out", "one-rep max", "1rm", "all-out")
+
+_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+
+def _numeric_leaves(value: Any) -> list[float]:
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, int | float):
+        return [float(value)]
+    if isinstance(value, dict):
+        return [n for item in value.values() for n in _numeric_leaves(item)]
+    if isinstance(value, list):
+        return [n for item in value for n in _numeric_leaves(item)]
+    return []
+
+
+def _allowed_numbers(metrics: dict[str, Any]) -> set[float]:
+    """Metric values plus the simple conversions a reader would make (%, hours, rounding)."""
+
+    allowed: set[float] = set()
+    for value in _numeric_leaves(metrics):
+        allowed.update({value, float(round(value)), round(value, 1)})
+        if 0 < value <= 1:
+            allowed.update({round(value * 100, 1), float(round(value * 100))})
+        if value >= 60:
+            allowed.update({round(value / 60, 1), float(round(value / 60))})
+    return allowed
+
+
+def grounded_numbers(text: str, metrics: dict[str, Any]) -> bool:
+    """Every figure of 8 or more, or with decimals, must trace back to the metrics.
+
+    Small whole numbers (counts, weekdays, "1-3 reps") are ignored. Dates such as "Oct 6"
+    are small enough to pass for the same reason.
+    """
+
+    allowed = _allowed_numbers(metrics)
+    for token in _NUMBER.findall(text):
+        number = float(token.replace(",", ""))
+        if number < 8 and "." not in token:
+            continue
+        if not any(abs(number - candidate) <= 0.051 for candidate in allowed):
+            return False
+    return True
+
+
+def score_review(
+    text: str, metrics: dict[str, Any], *, max_words: int = REVIEW_WORD_LIMIT
+) -> dict[str, bool]:
+    """Checks for a review narrative; none depend on exact wording."""
+
+    lowered = text.lower()
+    return {
+        "within_word_limit": len(text.split()) <= max_words,
+        "no_boilerplate": not any(phrase in lowered for phrase in REVIEW_BOILERPLATE),
+        "grounded_numbers": grounded_numbers(text, metrics),
+        "no_failure_push": not any(phrase in lowered for phrase in FAILURE_PUSH_PHRASES),
     }

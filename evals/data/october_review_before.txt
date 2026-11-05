@@ -1,0 +1,55 @@
+Period
+Review window: Oct 6 → Nov 5, 2026.
+Everything listed is based only on entries inside that window.
+
+Adherence
+Current activity streak: 1 day — you logged/completed activity yesterday or today depending on the system’s cutoff.
+Activity completion rate: 35.5% — a little over one-third of expected activity days were completed/logged. This is the biggest consistency gap.
+
+Workouts
+11 lifting sessions logged.
+Most frequent session types:
+Chest & Back: 4
+Upper: 3
+Legs: 2
+Arms: 1
+Freestyle: 1
+Interpretation: upper-body work happened more consistently than legs/arms. Lower-body consistency still needs attention.
+
+Volume by exercise
+This is total logged training volume per exercise: typically weight × reps × sets, summed across the review period.
+Higher numbers do not automatically mean better; they mostly show which exercises you trained most often/heavily.
+Your largest logged volume came from movements like lat pulldown, dumbbell chest press, high row, seated leg press, incline pressing, and leg curls/extensions.
+
+Cardio
+3 cardio sessions
+41 total minutes
+1.04 total miles
+Average session length: 13.7 minutes
+Interpretation: cardio happened, but not near the planned 3x/week frequency or 30–40 minute target yet. The next goal is simply showing up more often, not crushing intensity.
+
+Nutrition
+14 days logged, 17 missing days.
+The averages reflect reported nutrition values from logged days.
+Goal adherence rates show how often you landed close to targets:
+Protein goal adherence: 6.5%
+Protein adherence rate: 25.8%
+Carbs goal adherence: 6.5%
+Fat goal adherence: 19.4%
+Calorie goal adherence: 9.7%
+Interpretation: nutrition logging consistency is the main limitation here. Protein consistency especially needs work during a bulk.
+
+Measurements
+1 measurement entry
+1 progress photo
+No current body weight, waist, or body-fat values available in this review output.
+Interpretation: not enough measurement data to judge body-composition trend yet.
+
+Sleep
+4 nights logged
+Logging rate: 12.9%
+Average time asleep: 450 minutes
+Nights under 6 hours: 0
+Interpretation: the logged sleep duration looks fine, but there are too few sleep logs to confidently assess recovery patterns.
+
+Bottom line: the main issue this period wasn’t workout quality — it was consistency and logging coverage. The next target should be boring but effective: complete the scheduled sessions, hit protein more often, and keep logging even on imperfect days.
